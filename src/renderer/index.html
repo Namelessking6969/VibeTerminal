@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:;">
+  <title>VibeTerminal</title>
+  <link rel="stylesheet" href="xterm.css">
+  <style>
+    :root {
+      --bg: #0D0D0D;
+      --bg-secondary: #1A1A1A;
+      --fg: #E0E0E0;
+      --fg-dim: #888888;
+      --cursor: #00FF88;
+      --cursor-glow: rgba(0, 255, 136, 0.5);
+      --selection: rgba(0, 255, 136, 0.2);
+      --accent: #00FF88;
+      --accent-dim: #00FF8880;
+      --border: #2A2A2A;
+      --tab-active: #00FF88;
+      --black: #1A1A2E;
+      --red: #FF6B6B;
+      --green: #4ADE80;
+      --yellow: #FACC15;
+      --blue: #60A5FA;
+      --magenta: #C084FC;
+      --cyan: #22D3EE;
+      --white: #E0E0E0;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Custom Title Bar */
+    .titlebar {
+      height: 38px;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      -webkit-app-region: drag;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .titlebar-buttons {
+      -webkit-app-region: no-drag;
+      display: flex;
+      gap: 8px;
+      padding-left: 12px;
+    }
+
+    .titlebar-btn {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .titlebar-btn:hover { opacity: 0.8; }
+    .titlebar-btn.close { background: #FF5F57; }
+    .titlebar-btn.minimize { background: #FFBD2E; }
+    .titlebar-btn.maximize { background: #28CA41; }
+
+    .titlebar-title {
+      flex: 1;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--fg-dim);
+    }
+
+    /* Tab Bar */
+    .tabbar {
+      height: 38px;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding: 0 8px;
+      gap: 2px;
+    }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: transparent;
+      border: none;
+      color: var(--fg-dim);
+      font-size: 12px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+      max-width: 180px;
+    }
+
+    .tab:hover {
+      color: var(--fg);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .tab.active {
+      color: var(--fg);
+      border-bottom-color: var(--tab-active);
+    }
+
+    .tab-icon {
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .tab-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100px;
+    }
+
+    .tab-close {
+      font-size: 10px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .tab:hover .tab-close,
+    .tab.active .tab-close {
+      opacity: 1;
+    }
+
+    .tab-new {
+      padding: 8px;
+      background: transparent;
+      border: none;
+      color: var(--fg-dim);
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .tab-new:hover {
+      color: var(--fg);
+    }
+
+    /* Terminal Container */
+    .terminal-container {
+      flex: 1;
+      position: relative;
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    .terminal-view {
+      position: absolute;
+      inset: 0;
+      display: none;
+      padding: 8px;
+    }
+
+    .terminal-view.active {
+      display: block;
+    }
+
+    .terminal-wrapper {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* xterm overrides */
+    .xterm {
+      height: 100%;
+    }
+
+    .xterm-viewport::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .xterm-viewport::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+
+    .xterm-viewport::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    .xterm-viewport::-webkit-scrollbar-thumb:hover {
+      background: var(--fg-dim);
+    }
+
+    /* Cursor glow effect */
+    .xterm-cursor-block {
+      background: var(--cursor) !important;
+      box-shadow: 0 0 10px var(--cursor-glow), 0 0 20px var(--cursor-glow);
+    }
+
+    .xterm-cursor-bar {
+      background: var(--cursor) !important;
+      box-shadow: 0 0 10px var(--cursor-glow);
+    }
+
+    /* Status Bar */
+    .statusbar {
+      height: 24px;
+      background: linear-gradient(to bottom, rgba(26, 26, 26, 0.9), rgba(13, 13, 13, 0.9));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      font-size: 11px;
+      border-top: 1px solid var(--border);
+    }
+
+    .statusbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .statusbar-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--fg-dim);
+    }
+
+    .statusbar-item svg {
+      width: 11px;
+      height: 11px;
+    }
+
+    .statusbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    /* Command Palette */
+    .command-palette-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: flex-start;
+      padding-top: 100px;
+      z-index: 1000;
+    }
+
+    .command-palette-overlay.visible {
+      display: flex;
+    }
+
+    .command-palette {
+      width: 450px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+
+    .command-palette-input {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--bg);
+      border: none;
+      border-bottom: 1px solid var(--border);
+      color: var(--fg);
+      font-size: 14px;
+      outline: none;
+    }
+
+    .command-palette-input::placeholder {
+      color: var(--fg-dim);
+    }
+
+    .command-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .command-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .command-item:hover,
+    .command-item.selected {
+      background: var(--selection);
+    }
+
+    .command-item-title {
+      font-size: 13px;
+    }
+
+    .command-item-shortcut {
+      font-size: 11px;
+      color: var(--fg-dim);
+      background: var(--bg);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+
+    /* Search Overlay */
+    .search-overlay {
+      position: fixed;
+      bottom: 34px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      z-index: 999;
+      overflow: hidden;
+    }
+
+    .search-overlay.visible {
+      display: block;
+    }
+
+    .search-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .search-input {
+      background: transparent;
+      border: none;
+      color: var(--fg);
+      font-size: 13px;
+      outline: none;
+      width: 250px;
+    }
+
+    .search-input::placeholder {
+      color: var(--fg-dim);
+    }
+
+    .search-toggle {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--fg-dim);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .search-toggle.active {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+    }
+
+    .search-count {
+      font-size: 11px;
+      color: var(--fg-dim);
+      font-family: monospace;
+    }
+
+    /* Split Panes */
+    .split-container {
+      display: flex;
+      width: 100%;
+      height: 100%;
+    }
+
+    .split-container.vertical {
+      flex-direction: column;
+    }
+
+    .split-container.horizontal {
+      flex-direction: row;
+    }
+
+    .split-pane {
+      flex: 1;
+      position: relative;
+      min-width: 100px;
+      min-height: 100px;
+    }
+
+    .split-divider {
+      background: var(--border);
+      z-index: 10;
+    }
+
+    .split-divider.horizontal {
+      width: 1px;
+      cursor: col-resize;
+    }
+
+    .split-divider.vertical {
+      height: 1px;
+      cursor: row-resize;
+    }
+
+    .split-divider:hover {
+      background: var(--accent-dim);
+    }
+
+    /* Empty State */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--fg-dim);
+      gap: 16px;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      opacity: 0.5;
+    }
+
+    .empty-state-text {
+      font-size: 16px;
+    }
+
+    .empty-state-hint {
+      font-size: 13px;
+      opacity: 0.7;
+    }
+
+    .empty-state-btn {
+      margin-top: 8px;
+      padding: 10px 20px;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .empty-state-btn:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <!-- Title Bar -->
+  <div class="titlebar">
+    <div class="titlebar-buttons">
+      <button class="titlebar-btn close" onclick="window.terminalAPI.close()"></button>
+      <button class="titlebar-btn minimize" onclick="window.terminalAPI.minimize()"></button>
+      <button class="titlebar-btn maximize" onclick="window.terminalAPI.maximize()"></button>
+    </div>
+    <div class="titlebar-title">VibeTerminal</div>
+    <div style="width: 68px;"></div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tabbar" id="tabbar">
+    <!-- Tabs will be added here -->
+  </div>
+
+  <!-- Terminal Container -->
+  <div class="terminal-container" id="terminalContainer">
+    <!-- Terminal views will be added here -->
+  </div>
+
+  <!-- Status Bar -->
+  <div class="statusbar">
+    <div class="statusbar-left">
+      <div class="statusbar-item" id="cwd">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+        <span>~</span>
+      </div>
+    </div>
+    <div class="statusbar-right">
+      <div class="statusbar-item">
+        <div class="status-indicator"></div>
+        <span id="shellName">zsh</span>
+      </div>
+      <div class="statusbar-item">
+        <span id="dimensions">80x24</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Command Palette -->
+  <div class="command-palette-overlay" id="commandPalette">
+    <div class="command-palette">
+      <input type="text" class="command-palette-input" id="commandInput" placeholder="Type a command...">
+      <div class="command-list" id="commandList"></div>
+    </div>
+  </div>
+
+  <!-- Search Overlay -->
+  <div class="search-overlay" id="searchOverlay">
+    <div class="search-input-wrapper">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input type="text" class="search-input" id="searchInput" placeholder="Search...">
+      <button class="search-toggle" id="caseSensitive">Aa</button>
+      <button class="search-toggle" id="useRegex">.*</button>
+      <span class="search-count" id="searchCount"></span>
+    </div>
+  </div>
+
+  <script src="xterm.js"></script>
+  <script src="xterm-addon-fit.js"></script>
+  <script src="xterm-addon-search.js"></script>
+  <script src="xterm-addon-web-links.js"></script>
+  <script>
+    // Terminal Manager
+    class TerminalManager {
+      constructor() {
+        this.tabs = [];
+        this.activeTabId = null;
+        this.terminals = new Map();
+        this.searchTerm = '';
+        this.searchMatches = [];
+        this.currentMatchIndex = 0;
+        
+        this.commands = [
+          { id: 'newTab', title: 'New Tab', shortcut: '⌘T', action: () => this.addTab() },
+          { id: 'closeTab', title: 'Close Tab', shortcut: '⌘W', action: () => this.closeActiveTab() },
+          { id: 'splitH', title: 'Split Horizontally', shortcut: '⌘D', action: () => this.splitActiveTab('horizontal') },
+          { id: 'splitV', title: 'Split Vertically', shortcut: '⌘⇧D', action: () => this.splitActiveTab('vertical') },
+          { id: 'nextTab', title: 'Next Tab', shortcut: '⌘⇧]', action: () => this.nextTab() },
+          { id: 'prevTab', title: 'Previous Tab', shortcut: '⌘⇧[', action: () => this.prevTab() },
+          { id: 'clear', title: 'Clear Terminal', shortcut: '⌘K', action: () => this.clearActiveTerminal() },
+          { id: 'search', title: 'Search...', shortcut: '⌘F', action: () => this.showSearch() },
+        ];
+        
+        this.setupEventListeners();
+        this.addTab();
+      }
+
+      setupEventListeners() {
+        // IPC events from main process
+        window.terminalAPI.onNewTab(() => this.addTab());
+        window.terminalAPI.onCloseTab(() => this.closeActiveTab());
+        window.terminalAPI.onClearTerminal(() => this.clearActiveTerminal());
+        window.terminalAPI.onNextTab(() => this.nextTab());
+        window.terminalAPI.onPrevTab(() => this.prevTab());
+        window.terminalAPI.onSplitHorizontal(() => this.splitActiveTab('horizontal'));
+        window.terminalAPI.onSplitVertical(() => this.splitActiveTab('vertical'));
+        window.terminalAPI.onShowSearch(() => this.showSearch());
+        window.terminalAPI.onShowCommandPalette(() => this.showCommandPalette());
+
+        // Terminal data
+        window.terminalAPI.onData(({ id, data }) => {
+          const term = this.terminals.get(id);
+          if (term) term.terminal.write(data);
+        });
+
+        window.terminalAPI.onExit(({ id }) => {
+          this.terminals.delete(id);
+          const tab = this.tabs.find(t => t.terminals.some(tn => tn.id === id));
+          if (tab) {
+            tab.terminals = tab.terminals.filter(tn => tn.id !== id);
+            if (tab.terminals.length === 0) {
+              this.closeTab(tab.id);
+            }
+          }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            this.hideOverlays();
+          }
+          if (e.ctrlKey && e.key === 'c' && !this.hasSelection()) {
+            // Let it pass through to terminal
+          }
+        });
+      }
+
+      async addTab() {
+        const id = Date.now().toString();
+        const shellName = await window.terminalAPI.getShellPath();
+        const shell = shellName.split('/').pop();
+        
+        const tab = {
+          id,
+          title: shell,
+          terminals: [],
+          activeTerminalIndex: 0,
+          splits: [] // { direction, left, right }
+        };
+        
+        this.tabs.push(tab);
+        await this.createTerminalForTab(tab);
+        this.setActiveTab(id);
+        this.renderTabs();
+      }
+
+      async createTerminalForTab(tab) {
+        const result = await window.terminalAPI.createTerminal({ cols: 80, rows: 24 });
+        
+        if (result.success) {
+          const container = document.createElement('div');
+          container.className = 'terminal-view';
+          container.dataset.tabId = tab.id;
+          
+          const wrapper = document.createElement('div');
+          wrapper.className = 'terminal-wrapper';
+          container.appendChild(wrapper);
+          
+          document.getElementById('terminalContainer').appendChild(container);
+          
+          // Create xterm
+          const terminal = new Terminal({
+            theme: {
+              background: '#0D0D0D',
+              foreground: '#E0E0E0',
+              cursor: '#00FF88',
+              cursorAccent: '#0D0D0D',
+              selectionBackground: '#00FF8833',
+              black: '#1A1A2E',
+              red: '#FF6B6B',
+              green: '#4ADE80',
+              yellow: '#FACC15',
+              blue: '#60A5FA',
+              magenta: '#C084FC',
+              cyan: '#22D3EE',
+              white: '#E0E0E0',
+              brightBlack: '#4A4A5A',
+              brightRed: '#FF8888',
+              brightGreen: '#6EE7A0',
+              brightYellow: '#FDE547',
+              brightBlue: '#93C5FD',
+              brightMagenta: '#D8B4FE',
+              brightCyan: '#67E8F9',
+              brightWhite: '#FFFFFF'
+            },
+            fontFamily: '"JetBrains Mono", "SF Mono", "Menlo", monospace',
+            fontSize: 13,
+            cursorBlink: true,
+            cursorStyle: 'block',
+            allowProposedApi: true
+          });
+          
+          const fitAddon = new FitAddon.FitAddon();
+          const searchAddon = new SearchAddon.SearchAddon();
+          const webLinksAddon = new WebLinksAddon.WebLinksAddon();
+          
+          terminal.loadAddon(fitAddon);
+          terminal.loadAddon(searchAddon);
+          terminal.loadAddon(webLinksAddon);
+          
+          terminal.open(wrapper);
+          fitAddon.fit();
+          
+          const terminalData = { id: result.id, terminal, fitAddon, searchAddon, container };
+          this.terminals.set(result.id, terminalData);
+          tab.terminals.push(terminalData);
+          
+          // Handle terminal input
+          terminal.onData((data) => {
+            window.terminalAPI.write(result.id, data);
+          });
+          
+          // Handle resize
+          terminal.onResize(({ cols, rows }) => {
+            window.terminalAPI.resize(result.id, cols, rows);
+            document.getElementById('dimensions').textContent = `${cols}x${rows}`;
+          });
+          
+          // Fit on window resize
+          window.addEventListener('resize', () => {
+            fitAddon.fit();
+          });
+          
+          terminal.focus();
+        }
+      }
+
+      closeTab(tabId) {
+        const index = this.tabs.findIndex(t => t.id === tabId);
+        if (index === -1) return;
+        
+        const tab = this.tabs[index];
+        tab.terminals.forEach(t => {
+          window.terminalAPI.kill(t.id);
+          if (t.container) t.container.remove();
+        });
+        
+        this.tabs.splice(index, 1);
+        
+        if (this.tabs.length === 0) {
+          this.addTab();
+        } else if (this.activeTabId === tabId) {
+          this.setActiveTab(this.tabs[Math.min(index, this.tabs.length - 1)].id);
+        }
+        
+        this.renderTabs();
+      }
+
+      closeActiveTab() {
+        if (this.activeTabId) this.closeTab(this.activeTabId);
+      }
+
+      setActiveTab(tabId) {
+        this.activeTabId = tabId;
+        
+        // Update terminal views
+        document.querySelectorAll('.terminal-view').forEach(v => {
+          v.classList.remove('active');
+        });
+        
+        const tab = this.tabs.find(t => t.id === tabId);
+        if (tab && tab.terminals[tab.activeTerminalIndex]) {
+          tab.terminals[tab.activeTerminalIndex].container.classList.add('active');
+          tab.terminals[tab.activeTerminalIndex].fitAddon.fit();
+        }
+        
+        this.renderTabs();
+      }
+
+      nextTab() {
+        const index = this.tabs.findIndex(t => t.id === this.activeTabId);
+        const nextIndex = (index + 1) % this.tabs.length;
+        this.setActiveTab(this.tabs[nextIndex].id);
+      }
+
+      prevTab() {
+        const index = this.tabs.findIndex(t => t.id === this.activeTabId);
+        const prevIndex = (index - 1 + this.tabs.length) % this.tabs.length;
+        this.setActiveTab(this.tabs[prevIndex].id);
+      }
+
+      splitActiveTab(direction) {
+        const tab = this.tabs.find(t => t.id === this.activeTabId);
+        if (!tab) return;
+        
+        this.createTerminalForTab(tab);
+        this.setActiveTab(tab.id);
+      }
+
+      clearActiveTerminal() {
+        const tab = this.tabs.find(t => t.id === this.activeTabId);
+        if (tab && tab.terminals[tab.activeTerminalIndex]) {
+          const term = tab.terminals[tab.activeTerminalIndex].terminal;
+          term.clear();
+          term.write('\x1b[2J\x1b[H');
+        }
+      }
+
+      renderTabs() {
+        const tabbar = document.getElementById('tabbar');
+        tabbar.innerHTML = '';
+        
+        this.tabs.forEach(tab => {
+          const tabEl = document.createElement('button');
+          tabEl.className = `tab ${tab.id === this.activeTabId ? 'active' : ''}`;
+          tabEl.innerHTML = `
+            <span class="tab-icon">⌘</span>
+            <span class="tab-title">${tab.title}</span>
+            <span class="tab-close">✕</span>
+          `;
+          tabEl.onclick = (e) => {
+            if (e.target.classList.contains('tab-close')) {
+              this.closeTab(tab.id);
+            } else {
+              this.setActiveTab(tab.id);
+            }
+          };
+          tabbar.appendChild(tabEl);
+        });
+        
+        const newTabBtn = document.createElement('button');
+        newTabBtn.className = 'tab-new';
+        newTabBtn.innerHTML = '+';
+        newTabBtn.onclick = () => this.addTab();
+        tabbar.appendChild(newTabBtn);
+      }
+
+      showCommandPalette() {
+        const overlay = document.getElementById('commandPalette');
+        const input = document.getElementById('commandInput');
+        const list = document.getElementById('commandList');
+        
+        overlay.classList.add('visible');
+        input.value = '';
+        input.focus();
+        
+        this.renderCommands('');
+        
+        input.oninput = () => this.renderCommands(input.value);
+      }
+
+      renderCommands(filter) {
+        const list = document.getElementById('commandList');
+        const filtered = this.commands.filter(c => 
+          c.title.toLowerCase().includes(filter.toLowerCase())
+        );
+        
+        list.innerHTML = filtered.map((cmd, i) => `
+          <div class="command-item" onclick="terminalManager.executeCommand('${cmd.id}')">
+            <span class="command-item-title">${cmd.title}</span>
+            <span class="command-item-shortcut">${cmd.shortcut}</span>
+          </div>
+        `).join('');
+        
+        list.onkeydown = (e) => {
+          const items = list.querySelectorAll('.command-item');
+          let selected = Array.from(items).findIndex(i => i.classList.contains('selected'));
+          
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            items[selected]?.classList.remove('selected');
+            selected = (selected + 1) % items.length;
+            items[selected]?.classList.add('selected');
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            items[selected]?.classList.remove('selected');
+            selected = (selected - 1 + items.length) % items.length;
+            items[selected]?.classList.add('selected');
+          } else if (e.key === 'Enter') {
+            e.preventDefault();
+            items[selected]?.click();
+          }
+        };
+      }
+
+      executeCommand(id) {
+        const cmd = this.commands.find(c => c.id === id);
+        if (cmd) {
+          cmd.action();
+          this.hideOverlays();
+        }
+      }
+
+      showSearch() {
+        document.getElementById('searchOverlay').classList.add('visible');
+        document.getElementById('searchInput').focus();
+      }
+
+      hideOverlays() {
+        document.getElementById('commandPalette').classList.remove('visible');
+        document.getElementById('searchOverlay').classList.remove('visible');
+      }
+
+      hasSelection() {
+        return window.getSelection().toString().length > 0;
+      }
+    }
+
+    // Initialize
+    const terminalManager = new TerminalManager();
+  </script>
+</body>
+</html>
