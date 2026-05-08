@@ -32,6 +32,10 @@
   },
   "build": {
     "appId": "com.vibeterminal.app",
+    "publish": {
+      "provider": "github",
+      "releaseType": "release"
+    },
     "productName": "VibeTerminal",
     "directories": {
       "output": "dist",
