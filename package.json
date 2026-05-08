@@ -1,6 +1,6 @@
 {
   "name": "vibeterminal",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A beautiful, feature-rich terminal emulator",
   "homepage": "https://github.com/vibeterminal/vibeterminal",
   "main": "src/main/main.js",
@@ -16,7 +16,10 @@
     "build:mac": "electron-builder --mac",
     "build:linux": "electron-builder --linux",
     "build:win": "electron-builder --win",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps",
+    "version:bump": "./scripts/bump-version.sh",
+    "version:bump:minor": "./scripts/bump-version.sh minor",
+    "version:bump:major": "./scripts/bump-version.sh major"
   },
   "dependencies": {
     "electron-log": "^5.1.7",
@@ -54,11 +57,17 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         },
         {
           "target": "zip",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ]
     },
@@ -67,7 +76,9 @@
       "target": [
         {
           "target": "deb",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "maintainer": "VibeTerminal <dev@vibeterminal.app>",
@@ -78,7 +89,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
@@ -86,7 +99,8 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "artifactName": "${productName}-Setup-${version}.${ext}"
     }
   }
 }
