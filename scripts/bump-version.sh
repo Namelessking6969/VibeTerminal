@@ -68,7 +68,7 @@ console.log('Done! $CURRENT_VERSION -> ' + newVersion + ' (build ' + newBundleVe
 "
 
 git add package.json Resources/Info.plist project.yml scripts/create-pkg.sh
-git commit -m "bump version to $NEW_VERSION [skip ci]"
+git commit -m "bump version to $NEW_VERSION"
 git tag "v$NEW_VERSION"
 
 echo ""
