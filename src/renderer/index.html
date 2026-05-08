@@ -744,6 +744,17 @@
           <div class="settings-section-title">Appearance</div>
 
           <div class="settings-row">
+            <span class="settings-label">Theme</span>
+            <select class="settings-select" id="settingsTheme" onchange="terminalManager.onThemePreviewChange()">
+              <option value="vibe">Vibe</option>
+              <option value="dracula">Dracula</option>
+              <option value="nord">Nord</option>
+              <option value="monokai">Monokai</option>
+              <option value="catppuccin">Catppuccin Mocha</option>
+            </select>
+          </div>
+
+          <div class="settings-row">
             <span class="settings-label">Font Family</span>
             <select class="settings-select" id="settingsFontPreset" onchange="terminalManager.onFontPresetChange()">
               <option value='"MesloLGS NF", monospace'>MesloLGS NF</option>
@@ -831,13 +842,117 @@
       '"UbuntuMono Nerd Font", "Ubuntu Mono", monospace',
     ];
 
+    const THEMES = {
+      vibe: {
+        label: 'Vibe',
+        vars: {
+          '--bg': '#0D0D0D', '--bg-secondary': '#1A1A1A',
+          '--fg': '#E0E0E0', '--fg-dim': '#888888',
+          '--cursor': '#00FF88', '--cursor-glow': 'rgba(0, 255, 136, 0.5)',
+          '--selection': 'rgba(0, 255, 136, 0.2)',
+          '--accent': '#00FF88', '--accent-dim': '#00FF8880',
+          '--border': '#2A2A2A', '--tab-active': '#00FF88',
+        },
+        terminal: {
+          background: '#0D0D0D', foreground: '#E0E0E0',
+          cursor: '#00FF88', cursorAccent: '#0D0D0D', selectionBackground: '#00FF8833',
+          black: '#1A1A2E', red: '#FF6B6B', green: '#4ADE80', yellow: '#FACC15',
+          blue: '#60A5FA', magenta: '#C084FC', cyan: '#22D3EE', white: '#E0E0E0',
+          brightBlack: '#4A4A5A', brightRed: '#FF8888', brightGreen: '#6EE7A0',
+          brightYellow: '#FDE547', brightBlue: '#93C5FD', brightMagenta: '#D8B4FE',
+          brightCyan: '#67E8F9', brightWhite: '#FFFFFF',
+        }
+      },
+      dracula: {
+        label: 'Dracula',
+        vars: {
+          '--bg': '#282A36', '--bg-secondary': '#1E1F29',
+          '--fg': '#F8F8F2', '--fg-dim': '#6272A4',
+          '--cursor': '#BD93F9', '--cursor-glow': 'rgba(189, 147, 249, 0.5)',
+          '--selection': 'rgba(189, 147, 249, 0.2)',
+          '--accent': '#BD93F9', '--accent-dim': '#BD93F980',
+          '--border': '#44475A', '--tab-active': '#BD93F9',
+        },
+        terminal: {
+          background: '#282A36', foreground: '#F8F8F2',
+          cursor: '#BD93F9', cursorAccent: '#282A36', selectionBackground: '#44475A',
+          black: '#21222C', red: '#FF5555', green: '#50FA7B', yellow: '#F1FA8C',
+          blue: '#6272A4', magenta: '#BD93F9', cyan: '#8BE9FD', white: '#F8F8F2',
+          brightBlack: '#6272A4', brightRed: '#FF6E6E', brightGreen: '#69FF94',
+          brightYellow: '#FFFFA5', brightBlue: '#D6ACFF', brightMagenta: '#FF92DF',
+          brightCyan: '#A4FFFF', brightWhite: '#FFFFFF',
+        }
+      },
+      nord: {
+        label: 'Nord',
+        vars: {
+          '--bg': '#2E3440', '--bg-secondary': '#3B4252',
+          '--fg': '#ECEFF4', '--fg-dim': '#4C566A',
+          '--cursor': '#88C0D0', '--cursor-glow': 'rgba(136, 192, 208, 0.5)',
+          '--selection': 'rgba(136, 192, 208, 0.2)',
+          '--accent': '#88C0D0', '--accent-dim': '#88C0D080',
+          '--border': '#434C5E', '--tab-active': '#88C0D0',
+        },
+        terminal: {
+          background: '#2E3440', foreground: '#ECEFF4',
+          cursor: '#88C0D0', cursorAccent: '#2E3440', selectionBackground: '#434C5E',
+          black: '#3B4252', red: '#BF616A', green: '#A3BE8C', yellow: '#EBCB8B',
+          blue: '#81A1C1', magenta: '#B48EAD', cyan: '#88C0D0', white: '#E5E9F0',
+          brightBlack: '#4C566A', brightRed: '#BF616A', brightGreen: '#A3BE8C',
+          brightYellow: '#EBCB8B', brightBlue: '#81A1C1', brightMagenta: '#B48EAD',
+          brightCyan: '#8FBCBB', brightWhite: '#ECEFF4',
+        }
+      },
+      monokai: {
+        label: 'Monokai',
+        vars: {
+          '--bg': '#272822', '--bg-secondary': '#1E1F1C',
+          '--fg': '#F8F8F2', '--fg-dim': '#75715E',
+          '--cursor': '#F8F8F0', '--cursor-glow': 'rgba(248, 248, 240, 0.4)',
+          '--selection': 'rgba(249, 38, 114, 0.2)',
+          '--accent': '#A6E22E', '--accent-dim': '#A6E22E80',
+          '--border': '#3E3D32', '--tab-active': '#A6E22E',
+        },
+        terminal: {
+          background: '#272822', foreground: '#F8F8F2',
+          cursor: '#F8F8F0', cursorAccent: '#272822', selectionBackground: '#49483E',
+          black: '#272822', red: '#F92672', green: '#A6E22E', yellow: '#F4BF75',
+          blue: '#66D9E8', magenta: '#AE81FF', cyan: '#2AA198', white: '#F8F8F2',
+          brightBlack: '#75715E', brightRed: '#F92672', brightGreen: '#A6E22E',
+          brightYellow: '#F4BF75', brightBlue: '#66D9E8', brightMagenta: '#AE81FF',
+          brightCyan: '#2AA198', brightWhite: '#F9F8F5',
+        }
+      },
+      catppuccin: {
+        label: 'Catppuccin Mocha',
+        vars: {
+          '--bg': '#1E1E2E', '--bg-secondary': '#181825',
+          '--fg': '#CDD6F4', '--fg-dim': '#6C7086',
+          '--cursor': '#F5E0DC', '--cursor-glow': 'rgba(203, 166, 247, 0.5)',
+          '--selection': 'rgba(203, 166, 247, 0.2)',
+          '--accent': '#CBA6F7', '--accent-dim': '#CBA6F780',
+          '--border': '#313244', '--tab-active': '#CBA6F7',
+        },
+        terminal: {
+          background: '#1E1E2E', foreground: '#CDD6F4',
+          cursor: '#F5E0DC', cursorAccent: '#1E1E2E', selectionBackground: '#313244',
+          black: '#45475A', red: '#F38BA8', green: '#A6E3A1', yellow: '#F9E2AF',
+          blue: '#89B4FA', magenta: '#CBA6F7', cyan: '#89DCEB', white: '#BAC2DE',
+          brightBlack: '#585B70', brightRed: '#F38BA8', brightGreen: '#A6E3A1',
+          brightYellow: '#F9E2AF', brightBlue: '#89B4FA', brightMagenta: '#CBA6F7',
+          brightCyan: '#89DCEB', brightWhite: '#A6ADC8',
+        }
+      },
+    };
+
     const DEFAULT_SETTINGS = {
       fontFamily: '"MesloLGS NF", monospace',
       fontSize: 13,
       cursorStyle: 'block',
       cursorBlink: true,
       scrollback: 10000,
-      shell: ''
+      shell: '',
+      theme: 'vibe'
     };
 
     class TerminalManager {
@@ -888,6 +1003,7 @@
         } catch (e) {
           this.settings = { ...DEFAULT_SETTINGS };
         }
+        this.applyTheme(this.settings.theme || 'vibe');
         this.setupEventListeners();
         const hash = window.location.hash;
         const initialName = (hash && hash.startsWith('#ws='))
@@ -1133,29 +1249,7 @@
 
           const s = this.settings;
           const terminal = new Terminal({
-            theme: {
-              background: '#0D0D0D',
-              foreground: '#E0E0E0',
-              cursor: '#00FF88',
-              cursorAccent: '#0D0D0D',
-              selectionBackground: '#00FF8833',
-              black: '#1A1A2E',
-              red: '#FF6B6B',
-              green: '#4ADE80',
-              yellow: '#FACC15',
-              blue: '#60A5FA',
-              magenta: '#C084FC',
-              cyan: '#22D3EE',
-              white: '#E0E0E0',
-              brightBlack: '#4A4A5A',
-              brightRed: '#FF8888',
-              brightGreen: '#6EE7A0',
-              brightYellow: '#FDE547',
-              brightBlue: '#93C5FD',
-              brightMagenta: '#D8B4FE',
-              brightCyan: '#67E8F9',
-              brightWhite: '#FFFFFF'
-            },
+            theme: this.getXtermTheme(),
             fontFamily: s.fontFamily,
             fontSize: s.fontSize,
             cursorBlink: s.cursorBlink,
@@ -1326,12 +1420,10 @@
         document.getElementById('settingsOverlay').classList.remove('visible');
       }
 
-      hideSettings() {
-        document.getElementById('settingsOverlay').classList.remove('visible');
-      }
-
       showSettings() {
         const s = this.settings;
+
+        document.getElementById('settingsTheme').value = s.theme || 'vibe';
 
         const presetSelect = document.getElementById('settingsFontPreset');
         const isPreset = FONT_PRESETS.includes(s.fontFamily);
@@ -1371,7 +1463,8 @@
           cursorStyle: document.getElementById('settingsCursorStyle').value,
           cursorBlink: document.getElementById('settingsCursorBlink').checked,
           scrollback: parseInt(document.getElementById('settingsScrollback').value, 10) || 10000,
-          shell: document.getElementById('settingsShell').value.trim()
+          shell: document.getElementById('settingsShell').value.trim(),
+          theme: document.getElementById('settingsTheme').value,
         };
 
         const result = await window.terminalAPI.saveSettings(newSettings);
@@ -1382,16 +1475,38 @@
         }
       }
 
+      hideSettings() {
+        this.applyTheme(this.settings.theme || 'vibe');
+        document.getElementById('settingsOverlay').classList.remove('visible');
+      }
+
       applySettingsToAllTerminals() {
         const s = this.settings;
+        this.applyTheme(s.theme || 'vibe');
         this.terminals.forEach(({ terminal, fitAddon }) => {
           terminal.options.fontFamily = s.fontFamily;
           terminal.options.fontSize = s.fontSize;
           terminal.options.cursorStyle = s.cursorStyle;
           terminal.options.cursorBlink = s.cursorBlink;
           terminal.options.scrollback = s.scrollback;
+          terminal.options.theme = this.getXtermTheme();
           fitAddon.fit();
         });
+      }
+
+      getXtermTheme() {
+        const key = (this.settings.theme || 'vibe');
+        return (THEMES[key] || THEMES.vibe).terminal;
+      }
+
+      applyTheme(key) {
+        const theme = THEMES[key] || THEMES.vibe;
+        const root = document.documentElement;
+        Object.entries(theme.vars).forEach(([k, v]) => root.style.setProperty(k, v));
+      }
+
+      onThemePreviewChange() {
+        this.applyTheme(document.getElementById('settingsTheme').value);
       }
 
       checkForUpdates() {
