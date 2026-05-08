@@ -348,6 +348,90 @@
     .split-divider.vertical { height: 1px; cursor: row-resize; }
     .split-divider:hover { background: var(--accent-dim); }
 
+    /* Workspace Bar */
+    .workspacebar {
+      height: 36px;
+      background: var(--bg-secondary);
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding: 0 8px;
+      gap: 3px;
+      flex-shrink: 0;
+      overflow-x: auto;
+    }
+
+    .workspacebar::-webkit-scrollbar { height: 0; }
+
+    .workspace-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--fg-dim);
+      font-size: 11px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.15s;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .workspace-item:hover {
+      color: var(--fg);
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--border);
+    }
+
+    .workspace-item.active {
+      color: var(--accent);
+      background: rgba(0, 255, 136, 0.08);
+      border-color: var(--accent-dim);
+    }
+
+    .workspace-item-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+
+    .workspace-item-close {
+      font-size: 9px;
+      opacity: 0;
+      transition: opacity 0.15s;
+      line-height: 1;
+      padding: 1px 2px;
+      border-radius: 2px;
+    }
+
+    .workspace-item:hover .workspace-item-close,
+    .workspace-item.active .workspace-item-close { opacity: 0.5; }
+
+    .workspace-item-close:hover { opacity: 1 !important; background: rgba(255,255,255,0.1); }
+
+    .workspace-add {
+      padding: 4px 7px;
+      background: transparent;
+      border: none;
+      color: var(--fg-dim);
+      cursor: pointer;
+      font-size: 14px;
+      border-radius: 4px;
+      transition: all 0.15s;
+      line-height: 1;
+    }
+
+    .workspace-add:hover { color: var(--fg); background: rgba(255,255,255,0.05); }
+
+    .workspace-rename-input {
+      background: transparent;
+      border: none;
+      color: var(--accent);
+      font-size: 11px;
+      outline: none;
+      max-width: 120px;
+      font-family: inherit;
+      padding: 0;
+    }
+
     /* Empty State */
     .empty-state {
       display: flex;
@@ -583,6 +667,9 @@
   <!-- Update Banner -->
   <div class="update-banner" id="updateBanner"></div>
 
+  <!-- Workspace Bar -->
+  <div class="workspacebar" id="workspacebar"></div>
+
   <!-- Tab Bar -->
   <div class="tabbar" id="tabbar"></div>
 
@@ -741,25 +828,44 @@
 
     class TerminalManager {
       constructor() {
-        this.tabs = [];
-        this.activeTabId = null;
+        this.workspaces = [];
+        this.activeWorkspaceId = null;
         this.terminals = new Map();
         this.settings = { ...DEFAULT_SETTINGS };
         this.searchTerm = '';
 
         this.commands = [
-          { id: 'newTab',    title: 'New Tab',            shortcut: '⌘T',   action: () => this.addTab() },
-          { id: 'closeTab',  title: 'Close Tab',          shortcut: '⌘W',   action: () => this.closeActiveTab() },
-          { id: 'splitH',    title: 'Split Horizontally', shortcut: '⌘D',   action: () => this.splitActiveTab('horizontal') },
-          { id: 'splitV',    title: 'Split Vertically',   shortcut: '⌘⇧D',  action: () => this.splitActiveTab('vertical') },
-          { id: 'nextTab',   title: 'Next Tab',           shortcut: '⌘⇧]',  action: () => this.nextTab() },
-          { id: 'prevTab',   title: 'Previous Tab',       shortcut: '⌘⇧[',  action: () => this.prevTab() },
-          { id: 'clear',     title: 'Clear Terminal',     shortcut: '⌘K',   action: () => this.clearActiveTerminal() },
-          { id: 'search',    title: 'Search...',          shortcut: '⌘F',   action: () => this.showSearch() },
-          { id: 'settings',  title: 'Settings',           shortcut: '⌘,',   action: () => this.showSettings() },
+          { id: 'newTab',          title: 'New Tab',              shortcut: '⌘T',   action: () => this.addTab() },
+          { id: 'closeTab',        title: 'Close Tab',            shortcut: '⌘W',   action: () => this.closeActiveTab() },
+          { id: 'splitH',          title: 'Split Horizontally',   shortcut: '⌘D',   action: () => this.splitActiveTab('horizontal') },
+          { id: 'splitV',          title: 'Split Vertically',     shortcut: '⌘⇧D',  action: () => this.splitActiveTab('vertical') },
+          { id: 'nextTab',         title: 'Next Tab',             shortcut: '⌘⇧]',  action: () => this.nextTab() },
+          { id: 'prevTab',         title: 'Previous Tab',         shortcut: '⌘⇧[',  action: () => this.prevTab() },
+          { id: 'newWorkspace',    title: 'New Workspace',        shortcut: '⌘⇧N',  action: () => this.addWorkspace() },
+          { id: 'nextWorkspace',   title: 'Next Workspace',       shortcut: '⌘⇧.',  action: () => this.nextWorkspace() },
+          { id: 'prevWorkspace',   title: 'Previous Workspace',   shortcut: '⌘⇧,',  action: () => this.prevWorkspace() },
+          { id: 'clear',           title: 'Clear Terminal',       shortcut: '⌘K',   action: () => this.clearActiveTerminal() },
+          { id: 'search',          title: 'Search...',            shortcut: '⌘F',   action: () => this.showSearch() },
+          { id: 'settings',        title: 'Settings',             shortcut: '⌘,',   action: () => this.showSettings() },
         ];
 
         this.init();
+      }
+
+      get currentWorkspace() {
+        return this.workspaces.find(w => w.id === this.activeWorkspaceId) || null;
+      }
+
+      get tabs() {
+        return this.currentWorkspace ? this.currentWorkspace.tabs : [];
+      }
+
+      get activeTabId() {
+        return this.currentWorkspace ? this.currentWorkspace.activeTabId : null;
+      }
+
+      set activeTabId(id) {
+        if (this.currentWorkspace) this.currentWorkspace.activeTabId = id;
       }
 
       async init() {
@@ -769,7 +875,7 @@
           this.settings = { ...DEFAULT_SETTINGS };
         }
         this.setupEventListeners();
-        this.addTab();
+        await this.addWorkspace('workspace 1');
       }
 
       setupEventListeners() {
@@ -791,10 +897,19 @@
 
         window.terminalAPI.onExit(({ id }) => {
           this.terminals.delete(id);
-          const tab = this.tabs.find(t => t.terminals.some(tn => tn.id === id));
-          if (tab) {
-            tab.terminals = tab.terminals.filter(tn => tn.id !== id);
-            if (tab.terminals.length === 0) this.closeTab(tab.id);
+          for (const ws of this.workspaces) {
+            const tab = ws.tabs.find(t => t.terminals.some(tn => tn.id === id));
+            if (tab) {
+              tab.terminals = tab.terminals.filter(tn => tn.id !== id);
+              if (tab.terminals.length === 0) {
+                if (ws.id === this.activeWorkspaceId) {
+                  this.closeTab(tab.id);
+                } else {
+                  ws.tabs = ws.tabs.filter(t => t.id !== tab.id);
+                }
+              }
+              break;
+            }
           }
         });
 
@@ -822,13 +937,145 @@
         });
       }
 
+      // ─── Workspace management ────────────────────────────────────────────────
+
+      async addWorkspace(name) {
+        const id = Date.now().toString();
+        const num = this.workspaces.length + 1;
+        const workspace = { id, name: name || `workspace ${num}`, tabs: [], activeTabId: null };
+        this.workspaces.push(workspace);
+        this.activeWorkspaceId = id;
+        this.renderWorkspaces();
+        this.renderTabs();
+        await this.addTab();
+      }
+
+      closeWorkspace(id) {
+        if (this.workspaces.length === 1) return;
+
+        const ws = this.workspaces.find(w => w.id === id);
+        if (!ws) return;
+
+        ws.tabs.forEach(tab => {
+          tab.terminals.forEach(t => {
+            window.terminalAPI.kill(t.id);
+            this.terminals.delete(t.id);
+            if (t.container) t.container.remove();
+          });
+        });
+
+        const index = this.workspaces.findIndex(w => w.id === id);
+        this.workspaces.splice(index, 1);
+
+        if (this.activeWorkspaceId === id) {
+          const next = this.workspaces[Math.min(index, this.workspaces.length - 1)];
+          this.setActiveWorkspace(next.id);
+        } else {
+          this.renderWorkspaces();
+        }
+      }
+
+      setActiveWorkspace(id) {
+        this.activeWorkspaceId = id;
+        const ws = this.workspaces.find(w => w.id === id);
+
+        if (ws) {
+          const tabId = ws.activeTabId || (ws.tabs.length > 0 ? ws.tabs[0].id : null);
+          if (tabId) {
+            this.setActiveTab(tabId);
+          } else {
+            document.querySelectorAll('.terminal-view').forEach(v => v.classList.remove('active'));
+            this.renderTabs();
+          }
+        }
+
+        this.renderWorkspaces();
+      }
+
+      nextWorkspace() {
+        const index = this.workspaces.findIndex(w => w.id === this.activeWorkspaceId);
+        this.setActiveWorkspace(this.workspaces[(index + 1) % this.workspaces.length].id);
+      }
+
+      prevWorkspace() {
+        const index = this.workspaces.findIndex(w => w.id === this.activeWorkspaceId);
+        this.setActiveWorkspace(this.workspaces[(index - 1 + this.workspaces.length) % this.workspaces.length].id);
+      }
+
+      startWorkspaceRename(id, nameEl) {
+        const ws = this.workspaces.find(w => w.id === id);
+        if (!ws) return;
+
+        const input = document.createElement('input');
+        input.value = ws.name;
+        input.className = 'workspace-rename-input';
+
+        const finish = () => {
+          ws.name = input.value.trim() || ws.name;
+          this.renderWorkspaces();
+        };
+
+        input.onblur = finish;
+        input.onkeydown = (e) => {
+          if (e.key === 'Enter') input.blur();
+          if (e.key === 'Escape') { input.value = ws.name; input.blur(); }
+          e.stopPropagation();
+        };
+
+        nameEl.replaceWith(input);
+        input.focus();
+        input.select();
+      }
+
+      renderWorkspaces() {
+        const bar = document.getElementById('workspacebar');
+        bar.innerHTML = '';
+
+        this.workspaces.forEach(ws => {
+          const el = document.createElement('div');
+          el.className = `workspace-item ${ws.id === this.activeWorkspaceId ? 'active' : ''}`;
+
+          const nameEl = document.createElement('span');
+          nameEl.className = 'workspace-item-name';
+          nameEl.textContent = ws.name;
+          nameEl.ondblclick = (e) => {
+            e.stopPropagation();
+            this.startWorkspaceRename(ws.id, nameEl);
+          };
+
+          const closeEl = document.createElement('span');
+          closeEl.className = 'workspace-item-close';
+          closeEl.textContent = '✕';
+          closeEl.onclick = (e) => {
+            e.stopPropagation();
+            this.closeWorkspace(ws.id);
+          };
+
+          el.appendChild(nameEl);
+          if (this.workspaces.length > 1) el.appendChild(closeEl);
+          el.onclick = () => this.setActiveWorkspace(ws.id);
+          bar.appendChild(el);
+        });
+
+        const addBtn = document.createElement('button');
+        addBtn.className = 'workspace-add';
+        addBtn.textContent = '+';
+        addBtn.title = 'New Workspace';
+        addBtn.onclick = () => this.addWorkspace();
+        bar.appendChild(addBtn);
+      }
+
+      // ─── Tab management ──────────────────────────────────────────────────────
+
       async addTab() {
+        if (!this.currentWorkspace) return;
+
         const id = Date.now().toString();
         const shellPath = await window.terminalAPI.getShellPath();
         const shell = shellPath.split('/').pop();
 
         const tab = { id, title: shell, terminals: [], activeTerminalIndex: 0 };
-        this.tabs.push(tab);
+        this.currentWorkspace.tabs.push(tab);
         await this.createTerminalForTab(tab);
         this.setActiveTab(id);
         this.renderTabs();
@@ -908,21 +1155,25 @@
       }
 
       closeTab(tabId) {
-        const index = this.tabs.findIndex(t => t.id === tabId);
+        const ws = this.currentWorkspace;
+        if (!ws) return;
+
+        const index = ws.tabs.findIndex(t => t.id === tabId);
         if (index === -1) return;
 
-        const tab = this.tabs[index];
+        const tab = ws.tabs[index];
         tab.terminals.forEach(t => {
           window.terminalAPI.kill(t.id);
+          this.terminals.delete(t.id);
           if (t.container) t.container.remove();
         });
 
-        this.tabs.splice(index, 1);
+        ws.tabs.splice(index, 1);
 
-        if (this.tabs.length === 0) {
+        if (ws.tabs.length === 0) {
           this.addTab();
-        } else if (this.activeTabId === tabId) {
-          this.setActiveTab(this.tabs[Math.min(index, this.tabs.length - 1)].id);
+        } else if (ws.activeTabId === tabId) {
+          this.setActiveTab(ws.tabs[Math.min(index, ws.tabs.length - 1)].id);
         }
 
         this.renderTabs();
@@ -931,7 +1182,7 @@
       closeActiveTab() { if (this.activeTabId) this.closeTab(this.activeTabId); }
 
       setActiveTab(tabId) {
-        this.activeTabId = tabId;
+        if (this.currentWorkspace) this.currentWorkspace.activeTabId = tabId;
         document.querySelectorAll('.terminal-view').forEach(v => v.classList.remove('active'));
         const tab = this.tabs.find(t => t.id === tabId);
         if (tab && tab.terminals[tab.activeTerminalIndex]) {
@@ -942,11 +1193,13 @@
       }
 
       nextTab() {
+        if (!this.tabs.length) return;
         const index = this.tabs.findIndex(t => t.id === this.activeTabId);
         this.setActiveTab(this.tabs[(index + 1) % this.tabs.length].id);
       }
 
       prevTab() {
+        if (!this.tabs.length) return;
         const index = this.tabs.findIndex(t => t.id === this.activeTabId);
         this.setActiveTab(this.tabs[(index - 1 + this.tabs.length) % this.tabs.length].id);
       }
@@ -1043,7 +1296,6 @@
       showSettings() {
         const s = this.settings;
 
-        // Determine if fontFamily matches a preset or is custom
         const presetSelect = document.getElementById('settingsFontPreset');
         const isPreset = FONT_PRESETS.includes(s.fontFamily);
         if (isPreset) {
