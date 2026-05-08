@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, Menu, shell, dialog, nativeTheme } = require('electron');
 const path = require('path');
 const os = require('os');
+const fs = require('fs');
 const pty = require('node-pty');
 const log = require('electron-log');
 
@@ -11,8 +12,87 @@ let mainWindow = null;
 const terminals = new Map();
 let terminalIdCounter = 0;
 
-const SHELL = process.platform === 'win32' ? 
-  (process.env.COMSPEC || 'cmd.exe') : 
+// Settings
+const DEFAULT_SETTINGS = {
+  fontFamily: '"MesloLGS NF", "JetBrains Mono", monospace',
+  fontSize: 13,
+  cursorStyle: 'block',
+  cursorBlink: true,
+  scrollback: 10000,
+  shell: ''
+};
+
+function getSettingsPath() {
+  return path.join(app.getPath('userData'), 'settings.json');
+}
+
+function loadSettings() {
+  try {
+    const data = fs.readFileSync(getSettingsPath(), 'utf8');
+    return { ...DEFAULT_SETTINGS, ...JSON.parse(data) };
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+
+function saveSettingsToDisk(settings) {
+  try {
+    fs.writeFileSync(getSettingsPath(), JSON.stringify(settings, null, 2));
+    return true;
+  } catch (e) {
+    log.error('Failed to save settings:', e);
+    return false;
+  }
+}
+
+// Auto-updater
+let autoUpdaterInstance = null;
+
+function initUpdater() {
+  if (autoUpdaterInstance) return autoUpdaterInstance;
+  try {
+    const { autoUpdater } = require('electron-updater');
+    autoUpdater.logger = log;
+    autoUpdater.autoDownload = true;
+
+    autoUpdater.on('update-available', (info) => {
+      log.info('Update available:', info.version);
+      mainWindow?.webContents.send('update-available', { version: info.version });
+    });
+
+    autoUpdater.on('update-downloaded', (info) => {
+      log.info('Update downloaded:', info.version);
+      mainWindow?.webContents.send('update-downloaded', { version: info.version });
+    });
+
+    autoUpdater.on('update-not-available', () => {
+      mainWindow?.webContents.send('update-status', { message: 'You are on the latest version.' });
+    });
+
+    autoUpdater.on('error', (err) => {
+      log.error('Updater error:', err.message);
+      mainWindow?.webContents.send('update-status', { message: 'Update error: ' + err.message });
+    });
+
+    autoUpdaterInstance = autoUpdater;
+    return autoUpdater;
+  } catch (e) {
+    log.error('Failed to init updater:', e);
+    return null;
+  }
+}
+
+function checkForUpdates() {
+  if (!app.isPackaged) {
+    mainWindow?.webContents.send('update-status', { message: 'Auto-updates only available in packaged app.' });
+    return;
+  }
+  const updater = initUpdater();
+  if (updater) updater.checkForUpdates();
+}
+
+const SHELL = process.platform === 'win32' ?
+  (process.env.COMSPEC || 'cmd.exe') :
   (process.env.SHELL || '/bin/zsh');
 
 function createWindow() {
@@ -42,6 +122,11 @@ function createWindow() {
   });
 
   createMenu();
+
+  if (app.isPackaged) {
+    setTimeout(() => checkForUpdates(), 5000);
+  }
+
   log.info('Main window created');
 }
 
@@ -123,6 +208,12 @@ function createMenu() {
           click: () => mainWindow?.webContents.send('show-command-palette')
         },
         { type: 'separator' },
+        {
+          label: 'Settings',
+          accelerator: 'CmdOrCtrl+,',
+          click: () => mainWindow?.webContents.send('show-settings')
+        },
+        { type: 'separator' },
         { role: 'reload' },
         { role: 'toggleDevTools' },
         { type: 'separator' },
@@ -142,12 +233,17 @@ function createMenu() {
       label: 'Help',
       submenu: [
         {
+          label: 'Check for Updates',
+          click: () => checkForUpdates()
+        },
+        { type: 'separator' },
+        {
           label: 'About VibeTerminal',
           click: () => {
             dialog.showMessageBox(mainWindow, {
               type: 'info',
               title: 'About VibeTerminal',
-              message: 'VibeTerminal v1.0.0',
+              message: `VibeTerminal v${app.getVersion()}`,
               detail: 'A beautiful, feature-rich terminal emulator.\n\nBuilt with Electron, xterm.js, and node-pty.'
             });
           }
@@ -161,18 +257,34 @@ function createMenu() {
 }
 
 // IPC Handlers
+ipcMain.handle('get-settings', () => loadSettings());
+
+ipcMain.handle('save-settings', (event, settings) => {
+  const success = saveSettingsToDisk(settings);
+  return { success };
+});
+
+ipcMain.on('check-for-updates', () => checkForUpdates());
+
+ipcMain.on('install-update', () => {
+  if (autoUpdaterInstance) {
+    autoUpdaterInstance.quitAndInstall();
+  }
+});
+
 ipcMain.handle('create-terminal', async (event, options = {}) => {
+  const settings = loadSettings();
   const id = ++terminalIdCounter;
-  const shell = options.shell || SHELL;
+  const resolvedShell = options.shell || (settings.shell && settings.shell.trim()) || SHELL;
   const cwd = options.cwd || os.homedir();
-  
+
   const env = { ...process.env };
   env.TERM = 'xterm-256color';
   env.COLORTERM = 'truecolor';
   env.TERM_PROGRAM = 'VibeTerminal';
-  
+
   try {
-    const ptyProcess = pty.spawn(shell, [], {
+    const ptyProcess = pty.spawn(resolvedShell, [], {
       name: 'xterm-256color',
       cols: options.cols || 80,
       rows: options.rows || 24,
@@ -194,9 +306,9 @@ ipcMain.handle('create-terminal', async (event, options = {}) => {
       log.info(`Terminal ${id} exited with code ${exitCode}`);
     });
 
-    terminals.set(id, { process: ptyProcess, shell });
-    log.info(`Created terminal ${id} with shell ${shell}`);
-    
+    terminals.set(id, { process: ptyProcess, shell: resolvedShell });
+    log.info(`Created terminal ${id} with shell ${resolvedShell}`);
+
     return { success: true, id };
   } catch (error) {
     log.error('Failed to create terminal:', error);
@@ -206,16 +318,12 @@ ipcMain.handle('create-terminal', async (event, options = {}) => {
 
 ipcMain.on('terminal-input', (event, { id, data }) => {
   const terminal = terminals.get(id);
-  if (terminal) {
-    terminal.process.write(data);
-  }
+  if (terminal) terminal.process.write(data);
 });
 
 ipcMain.on('terminal-resize', (event, { id, cols, rows }) => {
   const terminal = terminals.get(id);
-  if (terminal) {
-    terminal.process.resize(cols, rows);
-  }
+  if (terminal) terminal.process.resize(cols, rows);
 });
 
 ipcMain.on('terminal-kill', (event, { id }) => {
@@ -226,9 +334,7 @@ ipcMain.on('terminal-kill', (event, { id }) => {
   }
 });
 
-ipcMain.on('window-minimize', () => {
-  mainWindow?.minimize();
-});
+ipcMain.on('window-minimize', () => mainWindow?.minimize());
 
 ipcMain.on('window-maximize', () => {
   if (mainWindow?.isMaximized()) {
@@ -238,21 +344,13 @@ ipcMain.on('window-maximize', () => {
   }
 });
 
-ipcMain.on('window-close', () => {
-  mainWindow?.close();
-});
+ipcMain.on('window-close', () => mainWindow?.close());
 
-ipcMain.handle('window-is-maximized', () => {
-  return mainWindow?.isMaximized() || false;
-});
+ipcMain.handle('window-is-maximized', () => mainWindow?.isMaximized() || false);
 
-ipcMain.handle('get-shell-path', () => {
-  return SHELL;
-});
+ipcMain.handle('get-shell-path', () => SHELL);
 
-ipcMain.handle('get-cwd', () => {
-  return os.homedir();
-});
+ipcMain.handle('get-cwd', () => os.homedir());
 
 // App events
 app.whenReady().then(() => {
@@ -260,19 +358,14 @@ app.whenReady().then(() => {
   createWindow();
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
 
 app.on('window-all-closed', () => {
   terminals.forEach((term) => term.process.kill());
   terminals.clear();
-  
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  if (process.platform !== 'darwin') app.quit();
 });
 
 app.on('before-quit', () => {
@@ -281,10 +374,5 @@ app.on('before-quit', () => {
   log.info('App quitting');
 });
 
-process.on('uncaughtException', (error) => {
-  log.error('Uncaught exception:', error);
-});
-
-process.on('unhandledRejection', (reason) => {
-  log.error('Unhandled rejection:', reason);
-});
+process.on('uncaughtException', (error) => log.error('Uncaught exception:', error));
+process.on('unhandledRejection', (reason) => log.error('Unhandled rejection:', reason));

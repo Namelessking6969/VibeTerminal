@@ -29,11 +29,7 @@
       --white: #E0E0E0;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       background: var(--bg);
@@ -45,7 +41,7 @@
       flex-direction: column;
     }
 
-    /* Custom Title Bar */
+    /* Title Bar */
     .titlebar {
       height: 38px;
       background: var(--bg);
@@ -53,6 +49,7 @@
       align-items: center;
       -webkit-app-region: drag;
       border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
     }
 
     .titlebar-buttons {
@@ -84,6 +81,59 @@
       color: var(--fg-dim);
     }
 
+    .titlebar-right {
+      -webkit-app-region: no-drag;
+      display: flex;
+      align-items: center;
+      padding-right: 12px;
+      width: 68px;
+      justify-content: flex-end;
+    }
+
+    .settings-trigger {
+      background: transparent;
+      border: none;
+      color: var(--fg-dim);
+      cursor: pointer;
+      padding: 4px 6px;
+      display: flex;
+      align-items: center;
+      border-radius: 4px;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .settings-trigger:hover {
+      color: var(--fg);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    /* Update Banner */
+    .update-banner {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 5px 16px;
+      background: rgba(0, 255, 136, 0.08);
+      border-bottom: 1px solid var(--accent-dim);
+      font-size: 12px;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .update-banner.visible { display: flex; }
+
+    .update-banner-btn {
+      background: var(--accent);
+      border: none;
+      color: var(--bg);
+      padding: 3px 10px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
     /* Tab Bar */
     .tabbar {
       height: 38px;
@@ -93,6 +143,7 @@
       border-bottom: 1px solid var(--border);
       padding: 0 8px;
       gap: 2px;
+      flex-shrink: 0;
     }
 
     .tab {
@@ -110,38 +161,12 @@
       max-width: 180px;
     }
 
-    .tab:hover {
-      color: var(--fg);
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .tab.active {
-      color: var(--fg);
-      border-bottom-color: var(--tab-active);
-    }
-
-    .tab-icon {
-      font-size: 12px;
-      color: var(--accent);
-    }
-
-    .tab-title {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 100px;
-    }
-
-    .tab-close {
-      font-size: 10px;
-      opacity: 0;
-      transition: opacity 0.15s;
-    }
-
-    .tab:hover .tab-close,
-    .tab.active .tab-close {
-      opacity: 1;
-    }
+    .tab:hover { color: var(--fg); background: rgba(255, 255, 255, 0.05); }
+    .tab.active { color: var(--fg); border-bottom-color: var(--tab-active); }
+    .tab-icon { font-size: 12px; color: var(--accent); }
+    .tab-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100px; }
+    .tab-close { font-size: 10px; opacity: 0; transition: opacity 0.15s; }
+    .tab:hover .tab-close, .tab.active .tab-close { opacity: 1; }
 
     .tab-new {
       padding: 8px;
@@ -152,9 +177,7 @@
       font-size: 14px;
     }
 
-    .tab-new:hover {
-      color: var(--fg);
-    }
+    .tab-new:hover { color: var(--fg); }
 
     /* Terminal Container */
     .terminal-container {
@@ -171,38 +194,16 @@
       padding: 8px;
     }
 
-    .terminal-view.active {
-      display: block;
-    }
+    .terminal-view.active { display: block; }
+    .terminal-wrapper { width: 100%; height: 100%; }
 
-    .terminal-wrapper {
-      width: 100%;
-      height: 100%;
-    }
+    .xterm { height: 100%; }
 
-    /* xterm overrides */
-    .xterm {
-      height: 100%;
-    }
+    .xterm-viewport::-webkit-scrollbar { width: 8px; }
+    .xterm-viewport::-webkit-scrollbar-track { background: var(--bg); }
+    .xterm-viewport::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .xterm-viewport::-webkit-scrollbar-thumb:hover { background: var(--fg-dim); }
 
-    .xterm-viewport::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    .xterm-viewport::-webkit-scrollbar-track {
-      background: var(--bg);
-    }
-
-    .xterm-viewport::-webkit-scrollbar-thumb {
-      background: var(--border);
-      border-radius: 4px;
-    }
-
-    .xterm-viewport::-webkit-scrollbar-thumb:hover {
-      background: var(--fg-dim);
-    }
-
-    /* Cursor glow effect */
     .xterm-cursor-block {
       background: var(--cursor) !important;
       box-shadow: 0 0 10px var(--cursor-glow), 0 0 20px var(--cursor-glow);
@@ -223,38 +224,14 @@
       padding: 0 12px;
       font-size: 11px;
       border-top: 1px solid var(--border);
+      flex-shrink: 0;
     }
 
-    .statusbar-left {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .statusbar-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--fg-dim);
-    }
-
-    .statusbar-item svg {
-      width: 11px;
-      height: 11px;
-    }
-
-    .statusbar-right {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .status-indicator {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--green);
-    }
+    .statusbar-left { display: flex; align-items: center; gap: 16px; }
+    .statusbar-item { display: flex; align-items: center; gap: 6px; color: var(--fg-dim); }
+    .statusbar-item svg { width: 11px; height: 11px; }
+    .statusbar-right { display: flex; align-items: center; gap: 16px; }
+    .status-indicator { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
 
     /* Command Palette */
     .command-palette-overlay {
@@ -268,9 +245,7 @@
       z-index: 1000;
     }
 
-    .command-palette-overlay.visible {
-      display: flex;
-    }
+    .command-palette-overlay.visible { display: flex; }
 
     .command-palette {
       width: 450px;
@@ -291,14 +266,9 @@
       outline: none;
     }
 
-    .command-palette-input::placeholder {
-      color: var(--fg-dim);
-    }
+    .command-palette-input::placeholder { color: var(--fg-dim); }
 
-    .command-list {
-      max-height: 300px;
-      overflow-y: auto;
-    }
+    .command-list { max-height: 300px; overflow-y: auto; }
 
     .command-item {
       display: flex;
@@ -309,15 +279,8 @@
       transition: background 0.1s;
     }
 
-    .command-item:hover,
-    .command-item.selected {
-      background: var(--selection);
-    }
-
-    .command-item-title {
-      font-size: 13px;
-    }
-
+    .command-item:hover, .command-item.selected { background: var(--selection); }
+    .command-item-title { font-size: 13px; }
     .command-item-shortcut {
       font-size: 11px;
       color: var(--fg-dim);
@@ -341,9 +304,7 @@
       overflow: hidden;
     }
 
-    .search-overlay.visible {
-      display: block;
-    }
+    .search-overlay.visible { display: block; }
 
     .search-input-wrapper {
       display: flex;
@@ -362,9 +323,7 @@
       width: 250px;
     }
 
-    .search-input::placeholder {
-      color: var(--fg-dim);
-    }
+    .search-input::placeholder { color: var(--fg-dim); }
 
     .search-toggle {
       background: transparent;
@@ -376,58 +335,18 @@
       cursor: pointer;
     }
 
-    .search-toggle.active {
-      background: var(--accent);
-      color: var(--bg);
-      border-color: var(--accent);
-    }
-
-    .search-count {
-      font-size: 11px;
-      color: var(--fg-dim);
-      font-family: monospace;
-    }
+    .search-toggle.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    .search-count { font-size: 11px; color: var(--fg-dim); font-family: monospace; }
 
     /* Split Panes */
-    .split-container {
-      display: flex;
-      width: 100%;
-      height: 100%;
-    }
-
-    .split-container.vertical {
-      flex-direction: column;
-    }
-
-    .split-container.horizontal {
-      flex-direction: row;
-    }
-
-    .split-pane {
-      flex: 1;
-      position: relative;
-      min-width: 100px;
-      min-height: 100px;
-    }
-
-    .split-divider {
-      background: var(--border);
-      z-index: 10;
-    }
-
-    .split-divider.horizontal {
-      width: 1px;
-      cursor: col-resize;
-    }
-
-    .split-divider.vertical {
-      height: 1px;
-      cursor: row-resize;
-    }
-
-    .split-divider:hover {
-      background: var(--accent-dim);
-    }
+    .split-container { display: flex; width: 100%; height: 100%; }
+    .split-container.vertical { flex-direction: column; }
+    .split-container.horizontal { flex-direction: row; }
+    .split-pane { flex: 1; position: relative; min-width: 100px; min-height: 100px; }
+    .split-divider { background: var(--border); z-index: 10; }
+    .split-divider.horizontal { width: 1px; cursor: col-resize; }
+    .split-divider.vertical { height: 1px; cursor: row-resize; }
+    .split-divider:hover { background: var(--accent-dim); }
 
     /* Empty State */
     .empty-state {
@@ -440,19 +359,9 @@
       gap: 16px;
     }
 
-    .empty-state-icon {
-      font-size: 48px;
-      opacity: 0.5;
-    }
-
-    .empty-state-text {
-      font-size: 16px;
-    }
-
-    .empty-state-hint {
-      font-size: 13px;
-      opacity: 0.7;
-    }
+    .empty-state-icon { font-size: 48px; opacity: 0.5; }
+    .empty-state-text { font-size: 16px; }
+    .empty-state-hint { font-size: 13px; opacity: 0.7; }
 
     .empty-state-btn {
       margin-top: 8px;
@@ -466,9 +375,191 @@
       transition: opacity 0.2s;
     }
 
-    .empty-state-btn:hover {
-      opacity: 0.9;
+    .empty-state-btn:hover { opacity: 0.9; }
+
+    /* Settings Modal */
+    .settings-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
     }
+
+    .settings-overlay.visible { display: flex; }
+
+    .settings-panel {
+      width: 500px;
+      background: var(--bg-secondary);
+      border-radius: 10px;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      max-height: 85vh;
+      border: 1px solid var(--border);
+    }
+
+    .settings-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .settings-header-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--fg);
+    }
+
+    .settings-close {
+      background: transparent;
+      border: none;
+      color: var(--fg-dim);
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .settings-close:hover { color: var(--fg); background: rgba(255,255,255,0.06); }
+
+    .settings-body {
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .settings-section-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .settings-row:last-child { margin-bottom: 0; }
+
+    .settings-label {
+      width: 130px;
+      font-size: 13px;
+      color: var(--fg-dim);
+      flex-shrink: 0;
+    }
+
+    .settings-hint {
+      font-size: 11px;
+      color: var(--fg-dim);
+      opacity: 0.6;
+      margin-top: 4px;
+      margin-left: 142px;
+    }
+
+    .settings-input, .settings-select {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      padding: 7px 10px;
+      border-radius: 5px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .settings-input:focus, .settings-select:focus { border-color: var(--accent-dim); }
+
+    .settings-select { cursor: pointer; }
+
+    .settings-input[type="number"] { width: 80px; flex: none; }
+
+    .settings-checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .settings-checkbox-row input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: var(--accent);
+    }
+
+    .settings-checkbox-label {
+      font-size: 13px;
+      color: var(--fg-dim);
+      cursor: pointer;
+    }
+
+    .settings-update-btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      padding: 7px 14px;
+      border-radius: 5px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .settings-update-btn:hover { border-color: var(--fg-dim); }
+
+    .settings-update-status {
+      font-size: 12px;
+      color: var(--fg-dim);
+      margin-left: 10px;
+    }
+
+    .settings-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .settings-btn-cancel {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--fg-dim);
+      padding: 7px 16px;
+      border-radius: 5px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .settings-btn-cancel:hover { border-color: var(--fg-dim); color: var(--fg); }
+
+    .settings-btn-save {
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      color: var(--bg);
+      padding: 7px 20px;
+      border-radius: 5px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .settings-btn-save:hover { opacity: 0.88; }
   </style>
 </head>
 <body>
@@ -480,18 +571,23 @@
       <button class="titlebar-btn maximize" onclick="window.terminalAPI.maximize()"></button>
     </div>
     <div class="titlebar-title">VibeTerminal</div>
-    <div style="width: 68px;"></div>
+    <div class="titlebar-right">
+      <button class="settings-trigger" onclick="terminalManager.showSettings()" title="Settings (⌘,)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+        </svg>
+      </button>
+    </div>
   </div>
+
+  <!-- Update Banner -->
+  <div class="update-banner" id="updateBanner"></div>
 
   <!-- Tab Bar -->
-  <div class="tabbar" id="tabbar">
-    <!-- Tabs will be added here -->
-  </div>
+  <div class="tabbar" id="tabbar"></div>
 
   <!-- Terminal Container -->
-  <div class="terminal-container" id="terminalContainer">
-    <!-- Terminal views will be added here -->
-  </div>
+  <div class="terminal-container" id="terminalContainer"></div>
 
   <!-- Status Bar -->
   <div class="statusbar">
@@ -533,38 +629,150 @@
     </div>
   </div>
 
+  <!-- Settings Modal -->
+  <div class="settings-overlay" id="settingsOverlay">
+    <div class="settings-panel">
+      <div class="settings-header">
+        <span class="settings-header-title">Settings</span>
+        <button class="settings-close" onclick="terminalManager.hideSettings()">✕</button>
+      </div>
+
+      <div class="settings-body">
+        <!-- Appearance -->
+        <div class="settings-section">
+          <div class="settings-section-title">Appearance</div>
+
+          <div class="settings-row">
+            <span class="settings-label">Font Family</span>
+            <select class="settings-select" id="settingsFontPreset" onchange="terminalManager.onFontPresetChange()">
+              <option value='"MesloLGS NF", monospace'>MesloLGS NF</option>
+              <option value='"JetBrainsMono Nerd Font", "JetBrains Mono", monospace'>JetBrainsMono Nerd Font</option>
+              <option value='"FiraCode Nerd Font", "Fira Code", monospace'>FiraCode Nerd Font</option>
+              <option value='"Hack Nerd Font", Hack, monospace'>Hack Nerd Font</option>
+              <option value='"CaskaydiaCove Nerd Font", "Cascadia Code", monospace'>CaskaydiaCove Nerd Font</option>
+              <option value='"IosevkaTerm Nerd Font", Iosevka, monospace'>Iosevka Nerd Font</option>
+              <option value='"UbuntuMono Nerd Font", "Ubuntu Mono", monospace'>UbuntuMono Nerd Font</option>
+              <option value="custom">Custom...</option>
+            </select>
+          </div>
+
+          <div class="settings-row" id="customFontRow" style="display:none">
+            <span class="settings-label">Custom Font</span>
+            <input type="text" class="settings-input" id="settingsCustomFont" placeholder='"MyFont Nerd Font", monospace'>
+          </div>
+
+          <div class="settings-row">
+            <span class="settings-label">Font Size</span>
+            <input type="number" class="settings-input" id="settingsFontSize" min="8" max="32" value="13">
+            <span style="font-size:12px;color:var(--fg-dim)">px</span>
+          </div>
+
+          <div class="settings-row">
+            <span class="settings-label">Cursor Style</span>
+            <select class="settings-select" id="settingsCursorStyle">
+              <option value="block">Block</option>
+              <option value="bar">Bar</option>
+              <option value="underline">Underline</option>
+            </select>
+          </div>
+
+          <div class="settings-checkbox-row">
+            <input type="checkbox" id="settingsCursorBlink">
+            <label class="settings-checkbox-label" for="settingsCursorBlink">Cursor Blink</label>
+          </div>
+
+          <div class="settings-row">
+            <span class="settings-label">Scrollback</span>
+            <input type="number" class="settings-input" id="settingsScrollback" min="100" max="100000" value="10000">
+            <span style="font-size:12px;color:var(--fg-dim)">lines</span>
+          </div>
+        </div>
+
+        <!-- Shell -->
+        <div class="settings-section">
+          <div class="settings-section-title">Shell</div>
+          <div class="settings-row">
+            <span class="settings-label">Shell Path</span>
+            <input type="text" class="settings-input" id="settingsShell" placeholder="Leave empty for default">
+          </div>
+          <div class="settings-hint">e.g. /bin/zsh &nbsp;·&nbsp; Empty = use system default</div>
+        </div>
+
+        <!-- Updates -->
+        <div class="settings-section">
+          <div class="settings-section-title">Updates</div>
+          <div class="settings-row" style="align-items:center">
+            <button class="settings-update-btn" onclick="terminalManager.checkForUpdates()">Check for Updates</button>
+            <span class="settings-update-status" id="updateStatus"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-footer">
+        <button class="settings-btn-cancel" onclick="terminalManager.hideSettings()">Cancel</button>
+        <button class="settings-btn-save" onclick="terminalManager.saveSettings()">Save</button>
+      </div>
+    </div>
+  </div>
+
   <script src="xterm.js"></script>
   <script src="xterm-addon-fit.js"></script>
   <script src="xterm-addon-search.js"></script>
   <script src="xterm-addon-web-links.js"></script>
   <script>
-    // Terminal Manager
+    const FONT_PRESETS = [
+      '"MesloLGS NF", monospace',
+      '"JetBrainsMono Nerd Font", "JetBrains Mono", monospace',
+      '"FiraCode Nerd Font", "Fira Code", monospace',
+      '"Hack Nerd Font", Hack, monospace',
+      '"CaskaydiaCove Nerd Font", "Cascadia Code", monospace',
+      '"IosevkaTerm Nerd Font", Iosevka, monospace',
+      '"UbuntuMono Nerd Font", "Ubuntu Mono", monospace',
+    ];
+
+    const DEFAULT_SETTINGS = {
+      fontFamily: '"MesloLGS NF", monospace',
+      fontSize: 13,
+      cursorStyle: 'block',
+      cursorBlink: true,
+      scrollback: 10000,
+      shell: ''
+    };
+
     class TerminalManager {
       constructor() {
         this.tabs = [];
         this.activeTabId = null;
         this.terminals = new Map();
+        this.settings = { ...DEFAULT_SETTINGS };
         this.searchTerm = '';
-        this.searchMatches = [];
-        this.currentMatchIndex = 0;
-        
+
         this.commands = [
-          { id: 'newTab', title: 'New Tab', shortcut: '⌘T', action: () => this.addTab() },
-          { id: 'closeTab', title: 'Close Tab', shortcut: '⌘W', action: () => this.closeActiveTab() },
-          { id: 'splitH', title: 'Split Horizontally', shortcut: '⌘D', action: () => this.splitActiveTab('horizontal') },
-          { id: 'splitV', title: 'Split Vertically', shortcut: '⌘⇧D', action: () => this.splitActiveTab('vertical') },
-          { id: 'nextTab', title: 'Next Tab', shortcut: '⌘⇧]', action: () => this.nextTab() },
-          { id: 'prevTab', title: 'Previous Tab', shortcut: '⌘⇧[', action: () => this.prevTab() },
-          { id: 'clear', title: 'Clear Terminal', shortcut: '⌘K', action: () => this.clearActiveTerminal() },
-          { id: 'search', title: 'Search...', shortcut: '⌘F', action: () => this.showSearch() },
+          { id: 'newTab',    title: 'New Tab',            shortcut: '⌘T',   action: () => this.addTab() },
+          { id: 'closeTab',  title: 'Close Tab',          shortcut: '⌘W',   action: () => this.closeActiveTab() },
+          { id: 'splitH',    title: 'Split Horizontally', shortcut: '⌘D',   action: () => this.splitActiveTab('horizontal') },
+          { id: 'splitV',    title: 'Split Vertically',   shortcut: '⌘⇧D',  action: () => this.splitActiveTab('vertical') },
+          { id: 'nextTab',   title: 'Next Tab',           shortcut: '⌘⇧]',  action: () => this.nextTab() },
+          { id: 'prevTab',   title: 'Previous Tab',       shortcut: '⌘⇧[',  action: () => this.prevTab() },
+          { id: 'clear',     title: 'Clear Terminal',     shortcut: '⌘K',   action: () => this.clearActiveTerminal() },
+          { id: 'search',    title: 'Search...',          shortcut: '⌘F',   action: () => this.showSearch() },
+          { id: 'settings',  title: 'Settings',           shortcut: '⌘,',   action: () => this.showSettings() },
         ];
-        
+
+        this.init();
+      }
+
+      async init() {
+        try {
+          this.settings = await window.terminalAPI.getSettings();
+        } catch (e) {
+          this.settings = { ...DEFAULT_SETTINGS };
+        }
         this.setupEventListeners();
         this.addTab();
       }
 
       setupEventListeners() {
-        // IPC events from main process
         window.terminalAPI.onNewTab(() => this.addTab());
         window.terminalAPI.onCloseTab(() => this.closeActiveTab());
         window.terminalAPI.onClearTerminal(() => this.clearActiveTerminal());
@@ -574,8 +782,8 @@
         window.terminalAPI.onSplitVertical(() => this.splitActiveTab('vertical'));
         window.terminalAPI.onShowSearch(() => this.showSearch());
         window.terminalAPI.onShowCommandPalette(() => this.showCommandPalette());
+        window.terminalAPI.onShowSettings(() => this.showSettings());
 
-        // Terminal data
         window.terminalAPI.onData(({ id, data }) => {
           const term = this.terminals.get(id);
           if (term) term.terminal.write(data);
@@ -586,36 +794,40 @@
           const tab = this.tabs.find(t => t.terminals.some(tn => tn.id === id));
           if (tab) {
             tab.terminals = tab.terminals.filter(tn => tn.id !== id);
-            if (tab.terminals.length === 0) {
-              this.closeTab(tab.id);
-            }
+            if (tab.terminals.length === 0) this.closeTab(tab.id);
           }
         });
 
-        // Keyboard shortcuts
+        window.terminalAPI.onUpdateAvailable(({ version }) => {
+          const banner = document.getElementById('updateBanner');
+          banner.innerHTML = `<span>Version ${version} is downloading in the background...</span>`;
+          banner.classList.add('visible');
+        });
+
+        window.terminalAPI.onUpdateDownloaded(({ version }) => {
+          const banner = document.getElementById('updateBanner');
+          banner.innerHTML = `
+            <span>Version ${version} is ready to install.</span>
+            <button class="update-banner-btn" onclick="terminalManager.installUpdate()">Restart & Update</button>
+          `;
+          banner.classList.add('visible');
+        });
+
+        window.terminalAPI.onUpdateStatus(({ message }) => {
+          document.getElementById('updateStatus').textContent = message;
+        });
+
         document.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape') {
-            this.hideOverlays();
-          }
-          if (e.ctrlKey && e.key === 'c' && !this.hasSelection()) {
-            // Let it pass through to terminal
-          }
+          if (e.key === 'Escape') this.hideOverlays();
         });
       }
 
       async addTab() {
         const id = Date.now().toString();
-        const shellName = await window.terminalAPI.getShellPath();
-        const shell = shellName.split('/').pop();
-        
-        const tab = {
-          id,
-          title: shell,
-          terminals: [],
-          activeTerminalIndex: 0,
-          splits: [] // { direction, left, right }
-        };
-        
+        const shellPath = await window.terminalAPI.getShellPath();
+        const shell = shellPath.split('/').pop();
+
+        const tab = { id, title: shell, terminals: [], activeTerminalIndex: 0 };
         this.tabs.push(tab);
         await this.createTerminalForTab(tab);
         this.setActiveTab(id);
@@ -624,19 +836,18 @@
 
       async createTerminalForTab(tab) {
         const result = await window.terminalAPI.createTerminal({ cols: 80, rows: 24 });
-        
+
         if (result.success) {
           const container = document.createElement('div');
           container.className = 'terminal-view';
           container.dataset.tabId = tab.id;
-          
+
           const wrapper = document.createElement('div');
           wrapper.className = 'terminal-wrapper';
           container.appendChild(wrapper);
-          
           document.getElementById('terminalContainer').appendChild(container);
-          
-          // Create xterm
+
+          const s = this.settings;
           const terminal = new Terminal({
             theme: {
               background: '#0D0D0D',
@@ -661,44 +872,37 @@
               brightCyan: '#67E8F9',
               brightWhite: '#FFFFFF'
             },
-            fontFamily: '"JetBrains Mono", "SF Mono", "Menlo", monospace',
-            fontSize: 13,
-            cursorBlink: true,
-            cursorStyle: 'block',
+            fontFamily: s.fontFamily,
+            fontSize: s.fontSize,
+            cursorBlink: s.cursorBlink,
+            cursorStyle: s.cursorStyle,
+            scrollback: s.scrollback,
             allowProposedApi: true
           });
-          
+
           const fitAddon = new FitAddon.FitAddon();
           const searchAddon = new SearchAddon.SearchAddon();
           const webLinksAddon = new WebLinksAddon.WebLinksAddon();
-          
+
           terminal.loadAddon(fitAddon);
           terminal.loadAddon(searchAddon);
           terminal.loadAddon(webLinksAddon);
-          
+
           terminal.open(wrapper);
           fitAddon.fit();
-          
+
           const terminalData = { id: result.id, terminal, fitAddon, searchAddon, container };
           this.terminals.set(result.id, terminalData);
           tab.terminals.push(terminalData);
-          
-          // Handle terminal input
-          terminal.onData((data) => {
-            window.terminalAPI.write(result.id, data);
-          });
-          
-          // Handle resize
+
+          terminal.onData((data) => window.terminalAPI.write(result.id, data));
+
           terminal.onResize(({ cols, rows }) => {
             window.terminalAPI.resize(result.id, cols, rows);
             document.getElementById('dimensions').textContent = `${cols}x${rows}`;
           });
-          
-          // Fit on window resize
-          window.addEventListener('resize', () => {
-            fitAddon.fit();
-          });
-          
+
+          window.addEventListener('resize', () => fitAddon.fit());
           terminal.focus();
         }
       }
@@ -706,61 +910,50 @@
       closeTab(tabId) {
         const index = this.tabs.findIndex(t => t.id === tabId);
         if (index === -1) return;
-        
+
         const tab = this.tabs[index];
         tab.terminals.forEach(t => {
           window.terminalAPI.kill(t.id);
           if (t.container) t.container.remove();
         });
-        
+
         this.tabs.splice(index, 1);
-        
+
         if (this.tabs.length === 0) {
           this.addTab();
         } else if (this.activeTabId === tabId) {
           this.setActiveTab(this.tabs[Math.min(index, this.tabs.length - 1)].id);
         }
-        
+
         this.renderTabs();
       }
 
-      closeActiveTab() {
-        if (this.activeTabId) this.closeTab(this.activeTabId);
-      }
+      closeActiveTab() { if (this.activeTabId) this.closeTab(this.activeTabId); }
 
       setActiveTab(tabId) {
         this.activeTabId = tabId;
-        
-        // Update terminal views
-        document.querySelectorAll('.terminal-view').forEach(v => {
-          v.classList.remove('active');
-        });
-        
+        document.querySelectorAll('.terminal-view').forEach(v => v.classList.remove('active'));
         const tab = this.tabs.find(t => t.id === tabId);
         if (tab && tab.terminals[tab.activeTerminalIndex]) {
           tab.terminals[tab.activeTerminalIndex].container.classList.add('active');
           tab.terminals[tab.activeTerminalIndex].fitAddon.fit();
         }
-        
         this.renderTabs();
       }
 
       nextTab() {
         const index = this.tabs.findIndex(t => t.id === this.activeTabId);
-        const nextIndex = (index + 1) % this.tabs.length;
-        this.setActiveTab(this.tabs[nextIndex].id);
+        this.setActiveTab(this.tabs[(index + 1) % this.tabs.length].id);
       }
 
       prevTab() {
         const index = this.tabs.findIndex(t => t.id === this.activeTabId);
-        const prevIndex = (index - 1 + this.tabs.length) % this.tabs.length;
-        this.setActiveTab(this.tabs[prevIndex].id);
+        this.setActiveTab(this.tabs[(index - 1 + this.tabs.length) % this.tabs.length].id);
       }
 
       splitActiveTab(direction) {
         const tab = this.tabs.find(t => t.id === this.activeTabId);
         if (!tab) return;
-        
         this.createTerminalForTab(tab);
         this.setActiveTab(tab.id);
       }
@@ -777,7 +970,7 @@
       renderTabs() {
         const tabbar = document.getElementById('tabbar');
         tabbar.innerHTML = '';
-        
+
         this.tabs.forEach(tab => {
           const tabEl = document.createElement('button');
           tabEl.className = `tab ${tab.id === this.activeTabId ? 'active' : ''}`;
@@ -795,7 +988,7 @@
           };
           tabbar.appendChild(tabEl);
         });
-        
+
         const newTabBtn = document.createElement('button');
         newTabBtn.className = 'tab-new';
         newTabBtn.innerHTML = '+';
@@ -806,57 +999,30 @@
       showCommandPalette() {
         const overlay = document.getElementById('commandPalette');
         const input = document.getElementById('commandInput');
-        const list = document.getElementById('commandList');
-        
         overlay.classList.add('visible');
         input.value = '';
         input.focus();
-        
         this.renderCommands('');
-        
         input.oninput = () => this.renderCommands(input.value);
       }
 
       renderCommands(filter) {
         const list = document.getElementById('commandList');
-        const filtered = this.commands.filter(c => 
+        const filtered = this.commands.filter(c =>
           c.title.toLowerCase().includes(filter.toLowerCase())
         );
-        
-        list.innerHTML = filtered.map((cmd, i) => `
+
+        list.innerHTML = filtered.map(cmd => `
           <div class="command-item" onclick="terminalManager.executeCommand('${cmd.id}')">
             <span class="command-item-title">${cmd.title}</span>
             <span class="command-item-shortcut">${cmd.shortcut}</span>
           </div>
         `).join('');
-        
-        list.onkeydown = (e) => {
-          const items = list.querySelectorAll('.command-item');
-          let selected = Array.from(items).findIndex(i => i.classList.contains('selected'));
-          
-          if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            items[selected]?.classList.remove('selected');
-            selected = (selected + 1) % items.length;
-            items[selected]?.classList.add('selected');
-          } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            items[selected]?.classList.remove('selected');
-            selected = (selected - 1 + items.length) % items.length;
-            items[selected]?.classList.add('selected');
-          } else if (e.key === 'Enter') {
-            e.preventDefault();
-            items[selected]?.click();
-          }
-        };
       }
 
       executeCommand(id) {
         const cmd = this.commands.find(c => c.id === id);
-        if (cmd) {
-          cmd.action();
-          this.hideOverlays();
-        }
+        if (cmd) { cmd.action(); this.hideOverlays(); }
       }
 
       showSearch() {
@@ -867,14 +1033,90 @@
       hideOverlays() {
         document.getElementById('commandPalette').classList.remove('visible');
         document.getElementById('searchOverlay').classList.remove('visible');
+        document.getElementById('settingsOverlay').classList.remove('visible');
       }
 
-      hasSelection() {
-        return window.getSelection().toString().length > 0;
+      hideSettings() {
+        document.getElementById('settingsOverlay').classList.remove('visible');
       }
+
+      showSettings() {
+        const s = this.settings;
+
+        // Determine if fontFamily matches a preset or is custom
+        const presetSelect = document.getElementById('settingsFontPreset');
+        const isPreset = FONT_PRESETS.includes(s.fontFamily);
+        if (isPreset) {
+          presetSelect.value = s.fontFamily;
+          document.getElementById('customFontRow').style.display = 'none';
+        } else {
+          presetSelect.value = 'custom';
+          document.getElementById('settingsCustomFont').value = s.fontFamily;
+          document.getElementById('customFontRow').style.display = 'flex';
+        }
+
+        document.getElementById('settingsFontSize').value = s.fontSize;
+        document.getElementById('settingsCursorStyle').value = s.cursorStyle;
+        document.getElementById('settingsCursorBlink').checked = s.cursorBlink;
+        document.getElementById('settingsScrollback').value = s.scrollback;
+        document.getElementById('settingsShell').value = s.shell || '';
+        document.getElementById('updateStatus').textContent = '';
+
+        document.getElementById('settingsOverlay').classList.add('visible');
+      }
+
+      onFontPresetChange() {
+        const val = document.getElementById('settingsFontPreset').value;
+        document.getElementById('customFontRow').style.display = val === 'custom' ? 'flex' : 'none';
+      }
+
+      async saveSettings() {
+        const presetVal = document.getElementById('settingsFontPreset').value;
+        const fontFamily = presetVal === 'custom'
+          ? document.getElementById('settingsCustomFont').value.trim()
+          : presetVal;
+
+        const newSettings = {
+          fontFamily: fontFamily || DEFAULT_SETTINGS.fontFamily,
+          fontSize: parseInt(document.getElementById('settingsFontSize').value, 10) || 13,
+          cursorStyle: document.getElementById('settingsCursorStyle').value,
+          cursorBlink: document.getElementById('settingsCursorBlink').checked,
+          scrollback: parseInt(document.getElementById('settingsScrollback').value, 10) || 10000,
+          shell: document.getElementById('settingsShell').value.trim()
+        };
+
+        const result = await window.terminalAPI.saveSettings(newSettings);
+        if (result.success) {
+          this.settings = newSettings;
+          this.applySettingsToAllTerminals();
+          this.hideSettings();
+        }
+      }
+
+      applySettingsToAllTerminals() {
+        const s = this.settings;
+        this.terminals.forEach(({ terminal, fitAddon }) => {
+          terminal.options.fontFamily = s.fontFamily;
+          terminal.options.fontSize = s.fontSize;
+          terminal.options.cursorStyle = s.cursorStyle;
+          terminal.options.cursorBlink = s.cursorBlink;
+          terminal.options.scrollback = s.scrollback;
+          fitAddon.fit();
+        });
+      }
+
+      checkForUpdates() {
+        document.getElementById('updateStatus').textContent = 'Checking...';
+        window.terminalAPI.checkForUpdates();
+      }
+
+      installUpdate() {
+        window.terminalAPI.installUpdate();
+      }
+
+      hasSelection() { return window.getSelection().toString().length > 0; }
     }
 
-    // Initialize
     const terminalManager = new TerminalManager();
   </script>
 </body>
