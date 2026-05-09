@@ -19,7 +19,8 @@ const DEFAULT_SETTINGS = {
   cursorStyle: 'block',
   cursorBlink: true,
   scrollback: 10000,
-  shell: ''
+  shell: '',
+  theme: 'vibe'
 };
 
 function getSettingsPath() {

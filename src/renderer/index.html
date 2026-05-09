@@ -69,9 +69,9 @@
     }
 
     .titlebar-btn:hover { opacity: 0.8; }
-    .titlebar-btn.close { background: #FF5F57; }
-    .titlebar-btn.minimize { background: #FFBD2E; }
-    .titlebar-btn.maximize { background: #28CA41; }
+    .titlebar-btn.close { background: var(--btn-close, #FF5F57); }
+    .titlebar-btn.minimize { background: var(--btn-minimize, #FFBD2E); }
+    .titlebar-btn.maximize { background: var(--btn-maximize, #28CA41); }
 
     .titlebar-title {
       flex: 1;
@@ -852,6 +852,7 @@
           '--selection': 'rgba(0, 255, 136, 0.2)',
           '--accent': '#00FF88', '--accent-dim': '#00FF8880',
           '--border': '#2A2A2A', '--tab-active': '#00FF88',
+          '--btn-close': '#FF5F57', '--btn-minimize': '#FFBD2E', '--btn-maximize': '#28CA41',
         },
         terminal: {
           background: '#0D0D0D', foreground: '#E0E0E0',
@@ -872,6 +873,7 @@
           '--selection': 'rgba(189, 147, 249, 0.2)',
           '--accent': '#BD93F9', '--accent-dim': '#BD93F980',
           '--border': '#44475A', '--tab-active': '#BD93F9',
+          '--btn-close': '#FF5555', '--btn-minimize': '#F1FA8C', '--btn-maximize': '#50FA7B',
         },
         terminal: {
           background: '#282A36', foreground: '#F8F8F2',
@@ -892,6 +894,7 @@
           '--selection': 'rgba(136, 192, 208, 0.2)',
           '--accent': '#88C0D0', '--accent-dim': '#88C0D080',
           '--border': '#434C5E', '--tab-active': '#88C0D0',
+          '--btn-close': '#BF616A', '--btn-minimize': '#EBCB8B', '--btn-maximize': '#A3BE8C',
         },
         terminal: {
           background: '#2E3440', foreground: '#ECEFF4',
@@ -912,6 +915,7 @@
           '--selection': 'rgba(249, 38, 114, 0.2)',
           '--accent': '#A6E22E', '--accent-dim': '#A6E22E80',
           '--border': '#3E3D32', '--tab-active': '#A6E22E',
+          '--btn-close': '#F92672', '--btn-minimize': '#F4BF75', '--btn-maximize': '#A6E22E',
         },
         terminal: {
           background: '#272822', foreground: '#F8F8F2',
@@ -932,6 +936,7 @@
           '--selection': 'rgba(203, 166, 247, 0.2)',
           '--accent': '#CBA6F7', '--accent-dim': '#CBA6F780',
           '--border': '#313244', '--tab-active': '#CBA6F7',
+          '--btn-close': '#F38BA8', '--btn-minimize': '#F9E2AF', '--btn-maximize': '#A6E3A1',
         },
         terminal: {
           background: '#1E1E2E', foreground: '#CDD6F4',
@@ -1476,22 +1481,39 @@
       }
 
       hideSettings() {
-        this.applyTheme(this.settings.theme || 'vibe');
+        const key = this.settings.theme || 'vibe';
+        this.applyTheme(key);
+        const xtermTheme = (THEMES[key] || THEMES.vibe).terminal;
+        this.terminals.forEach(({ terminal, fitAddon }) => {
+          this._applyXtermTheme(terminal, xtermTheme, fitAddon);
+        });
         document.getElementById('settingsOverlay').classList.remove('visible');
       }
 
       applySettingsToAllTerminals() {
         const s = this.settings;
         this.applyTheme(s.theme || 'vibe');
+        const xtermTheme = this.getXtermTheme();
         this.terminals.forEach(({ terminal, fitAddon }) => {
           terminal.options.fontFamily = s.fontFamily;
           terminal.options.fontSize = s.fontSize;
           terminal.options.cursorStyle = s.cursorStyle;
           terminal.options.cursorBlink = s.cursorBlink;
           terminal.options.scrollback = s.scrollback;
-          terminal.options.theme = this.getXtermTheme();
-          fitAddon.fit();
+          this._applyXtermTheme(terminal, xtermTheme, fitAddon);
         });
+      }
+
+      _applyXtermTheme(terminal, xtermTheme, fitAddon) {
+        terminal.options.theme = xtermTheme;
+        // Force xterm canvas to repaint by triggering a resize cycle
+        const { cols, rows } = terminal;
+        terminal.resize(Math.max(cols - 1, 1), rows);
+        if (fitAddon) {
+          fitAddon.fit();
+        } else {
+          terminal.resize(cols, rows);
+        }
       }
 
       getXtermTheme() {
@@ -1506,7 +1528,12 @@
       }
 
       onThemePreviewChange() {
-        this.applyTheme(document.getElementById('settingsTheme').value);
+        const key = document.getElementById('settingsTheme').value;
+        this.applyTheme(key);
+        const xtermTheme = (THEMES[key] || THEMES.vibe).terminal;
+        this.terminals.forEach(({ terminal, fitAddon }) => {
+          this._applyXtermTheme(terminal, xtermTheme, fitAddon);
+        });
       }
 
       checkForUpdates() {
