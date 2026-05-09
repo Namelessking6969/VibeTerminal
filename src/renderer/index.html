@@ -1385,7 +1385,7 @@
             this.setActiveWorkspace(ws.id);
             const menuItems = [
               { label: 'Rename', action: () => {
-                const n = el.querySelector('.workspace-item-name');
+                const n = document.querySelector('.workspace-item.active .workspace-item-name');
                 if (n) this.startWorkspaceRename(ws.id, n);
               }},
               { label: 'Undock to New Window', action: () => this.undockWorkspace(ws.id) },
@@ -1611,7 +1611,7 @@
             this.setActiveTab(tab.id);
             this.showContextMenu(e.clientX, e.clientY, [
               { label: 'Rename', action: () => {
-                const t = tabEl.querySelector('.tab-title');
+                const t = document.querySelector('.tab.active .tab-title');
                 if (t) this.startTabRename(tab.id, t);
               }},
               'separator',
