@@ -721,6 +721,47 @@
     .titlebar-btn.lnx.close:hover { background: var(--btn-close, #FF5F57); color: #fff; opacity: 1; }
     .titlebar-linux-right .settings-trigger { margin-right: 4px; }
 
+    /* Context Menu */
+    .context-menu {
+      position: fixed;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 0;
+      z-index: 10000;
+      min-width: 150px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+      font-size: 12px;
+    }
+
+    .context-menu-item {
+      display: flex;
+      align-items: center;
+      padding: 7px 14px;
+      color: var(--fg);
+      cursor: pointer;
+      transition: background 0.1s;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .context-menu-item:hover { background: rgba(255,255,255,0.08); }
+
+    .context-menu-item.danger:hover { background: rgba(255,80,80,0.15); color: #ff6b6b; }
+
+    .context-menu-separator { height: 1px; background: var(--border); margin: 4px 0; }
+
+    .tab-rename-input {
+      background: transparent;
+      border: none;
+      color: var(--fg);
+      font-size: 12px;
+      outline: none;
+      max-width: 100px;
+      font-family: inherit;
+      padding: 0;
+    }
+
   </style>
 </head>
 <body>
@@ -1238,6 +1279,69 @@
         input.select();
       }
 
+      showContextMenu(x, y, items) {
+        const existing = document.getElementById('contextMenu');
+        if (existing) existing.remove();
+
+        const menu = document.createElement('div');
+        menu.className = 'context-menu';
+        menu.id = 'contextMenu';
+
+        items.forEach(item => {
+          if (item === 'separator') {
+            const sep = document.createElement('div');
+            sep.className = 'context-menu-separator';
+            menu.appendChild(sep);
+          } else {
+            const el = document.createElement('div');
+            el.className = `context-menu-item${item.danger ? ' danger' : ''}`;
+            el.textContent = item.label;
+            el.onclick = () => { menu.remove(); item.action(); };
+            menu.appendChild(el);
+          }
+        });
+
+        document.body.appendChild(menu);
+
+        const vw = window.innerWidth, vh = window.innerHeight;
+        const mw = menu.offsetWidth, mh = menu.offsetHeight;
+        menu.style.left = (x + mw > vw ? vw - mw - 8 : x) + 'px';
+        menu.style.top = (y + mh > vh ? vh - mh - 8 : y) + 'px';
+
+        const dismiss = (e) => {
+          if (!menu.contains(e.target)) {
+            menu.remove();
+            document.removeEventListener('mousedown', dismiss);
+          }
+        };
+        setTimeout(() => document.addEventListener('mousedown', dismiss), 0);
+      }
+
+      startTabRename(tabId, titleEl) {
+        const tab = this.tabs.find(t => t.id === tabId);
+        if (!tab) return;
+
+        const input = document.createElement('input');
+        input.value = tab.title;
+        input.className = 'tab-rename-input';
+
+        const finish = () => {
+          tab.title = input.value.trim() || tab.title;
+          this.renderTabs();
+        };
+
+        input.onblur = finish;
+        input.onkeydown = (e) => {
+          if (e.key === 'Enter') input.blur();
+          if (e.key === 'Escape') { input.value = tab.title; input.blur(); }
+          e.stopPropagation();
+        };
+
+        titleEl.replaceWith(input);
+        input.focus();
+        input.select();
+      }
+
       renderWorkspaces() {
         const bar = document.getElementById('workspacebar');
         bar.innerHTML = '';
@@ -1275,6 +1379,23 @@
           el.appendChild(undockEl);
           if (this.workspaces.length > 1) el.appendChild(closeEl);
           el.onclick = () => this.setActiveWorkspace(ws.id);
+          el.oncontextmenu = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.setActiveWorkspace(ws.id);
+            const menuItems = [
+              { label: 'Rename', action: () => {
+                const n = el.querySelector('.workspace-item-name');
+                if (n) this.startWorkspaceRename(ws.id, n);
+              }},
+              'separator',
+              { label: 'New Workspace', action: () => this.addWorkspace() },
+            ];
+            if (this.workspaces.length > 1) {
+              menuItems.push({ label: 'Close Workspace', danger: true, action: () => this.closeWorkspace(ws.id) });
+            }
+            this.showContextMenu(e.clientX, e.clientY, menuItems);
+          };
           bar.appendChild(el);
         });
 
@@ -1459,17 +1580,42 @@
         this.tabs.forEach(tab => {
           const tabEl = document.createElement('button');
           tabEl.className = `tab ${tab.id === this.activeTabId ? 'active' : ''}`;
-          tabEl.innerHTML = `
-            <span class="tab-icon">⌘</span>
-            <span class="tab-title">${tab.title}</span>
-            <span class="tab-close">✕</span>
-          `;
+
+          const iconEl = document.createElement('span');
+          iconEl.className = 'tab-icon';
+          iconEl.textContent = '⌘';
+
+          const titleEl = document.createElement('span');
+          titleEl.className = 'tab-title';
+          titleEl.textContent = tab.title;
+
+          const closeEl = document.createElement('span');
+          closeEl.className = 'tab-close';
+          closeEl.textContent = '✕';
+
+          tabEl.appendChild(iconEl);
+          tabEl.appendChild(titleEl);
+          tabEl.appendChild(closeEl);
+
           tabEl.onclick = (e) => {
             if (e.target.classList.contains('tab-close')) {
               this.closeTab(tab.id);
             } else {
               this.setActiveTab(tab.id);
             }
+          };
+          tabEl.oncontextmenu = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.setActiveTab(tab.id);
+            this.showContextMenu(e.clientX, e.clientY, [
+              { label: 'Rename', action: () => {
+                const t = tabEl.querySelector('.tab-title');
+                if (t) this.startTabRename(tab.id, t);
+              }},
+              'separator',
+              { label: 'Close Tab', danger: true, action: () => this.closeTab(tab.id) },
+            ]);
           };
           tabbar.appendChild(tabEl);
         });
