@@ -120,6 +120,10 @@ function createWindow(opts = {}) {
     : {};
   win.loadFile(path.join(__dirname, '../renderer/index.html'), loadOptions);
 
+  // Prevent Electron from showing a native context menu on Linux that would
+  // overlap the renderer's custom HTML context menu
+  win.webContents.on('context-menu', (e) => e.preventDefault());
+
   const wcId = win.webContents.id;
   win.on('closed', () => {
     if (win === mainWindow) mainWindow = null;

@@ -1069,6 +1069,8 @@
         this.settings = { ...DEFAULT_SETTINGS };
         this.searchTerm = '';
         this.platform = 'linux';
+        this.lastMouseX = 0;
+        this.lastMouseY = 0;
 
         this.commands = [
           { id: 'newTab',          title: 'New Tab',              shortcut: '⌘T',   action: () => this.addTab() },
@@ -1178,6 +1180,10 @@
         document.addEventListener('keydown', (e) => {
           if (e.key === 'Escape') this.hideOverlays();
         });
+
+        // Track mouse position so contextmenu handler has valid coords on Linux
+        document.addEventListener('mousemove', (e) => { this.lastMouseX = e.clientX; this.lastMouseY = e.clientY; }, true);
+        document.addEventListener('mousedown', (e) => { this.lastMouseX = e.clientX; this.lastMouseY = e.clientY; }, true);
       }
 
       // ─── Workspace management ────────────────────────────────────────────────
@@ -1275,11 +1281,12 @@
         };
 
         nameEl.replaceWith(input);
-        input.focus();
-        input.select();
+        requestAnimationFrame(() => { input.focus(); input.select(); });
       }
 
       showContextMenu(x, y, items) {
+        // On Linux/Wayland, contextmenu events sometimes report (0,0) — fall back to last known position
+        if (x === 0 && y === 0) { x = this.lastMouseX; y = this.lastMouseY; }
         const existing = document.getElementById('contextMenu');
         if (existing) existing.remove();
 
@@ -1338,8 +1345,7 @@
         };
 
         titleEl.replaceWith(input);
-        input.focus();
-        input.select();
+        requestAnimationFrame(() => { input.focus(); input.select(); });
       }
 
       renderWorkspaces() {
@@ -1378,7 +1384,7 @@
           el.appendChild(nameEl);
           el.appendChild(undockEl);
           if (this.workspaces.length > 1) el.appendChild(closeEl);
-          el.onclick = () => this.setActiveWorkspace(ws.id);
+          el.onclick = () => { if (ws.id !== this.activeWorkspaceId) this.setActiveWorkspace(ws.id); };
           el.oncontextmenu = (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -1601,7 +1607,7 @@
           tabEl.onclick = (e) => {
             if (e.target.classList.contains('tab-close')) {
               this.closeTab(tab.id);
-            } else {
+            } else if (tab.id !== this.activeTabId) {
               this.setActiveTab(tab.id);
             }
           };
