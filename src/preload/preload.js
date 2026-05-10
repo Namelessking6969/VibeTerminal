@@ -43,6 +43,9 @@ contextBridge.exposeInMainWorld('terminalAPI', {
   getPlatform: () => ipcRenderer.invoke('get-platform'),
 
   // Settings
+  readSshConfig: () => ipcRenderer.invoke('ssh-read-config'),
+  writeSshConfig: (entry) => ipcRenderer.invoke('ssh-write-config', entry),
+
   getSettings: () => ipcRenderer.invoke('get-settings'),
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
 

@@ -762,6 +762,153 @@
       padding: 0;
     }
 
+    /* SSH Dropdown */
+    .ssh-btn {
+      padding: 6px 8px;
+      background: transparent;
+      border: none;
+      color: var(--fg-dim);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      border-radius: 4px;
+      transition: all 0.15s;
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .ssh-btn:hover { color: var(--accent); background: rgba(0,255,136,0.07); }
+    .ssh-btn.active { color: var(--accent); }
+
+    .ssh-dropdown {
+      position: fixed;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0;
+      z-index: 5000;
+      width: 300px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.55);
+      overflow: hidden;
+    }
+
+    .ssh-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding: 10px 14px 6px;
+    }
+
+    .ssh-host-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 14px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .ssh-host-item:hover { background: rgba(255,255,255,0.06); }
+
+    .ssh-host-info { flex: 1; min-width: 0; }
+    .ssh-host-name { font-size: 13px; color: var(--fg); }
+    .ssh-host-detail { font-size: 11px; color: var(--fg-dim); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .ssh-host-connect {
+      font-size: 11px;
+      color: var(--accent);
+      opacity: 0;
+      transition: opacity 0.1s;
+      padding-left: 8px;
+      flex-shrink: 0;
+    }
+
+    .ssh-host-item:hover .ssh-host-connect { opacity: 1; }
+
+    .ssh-dropdown-sep { height: 1px; background: var(--border); margin: 4px 0; }
+
+    .ssh-form-area {
+      padding: 8px 14px 12px;
+    }
+
+    .ssh-form-label {
+      font-size: 11px;
+      color: var(--fg-dim);
+      margin-bottom: 6px;
+    }
+
+    .ssh-quick-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .ssh-input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.15s;
+      font-family: monospace;
+    }
+
+    .ssh-input:focus { border-color: var(--accent-dim); }
+    .ssh-input::placeholder { color: var(--fg-dim); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .ssh-input.error { border-color: var(--red) !important; }
+
+    .ssh-input-full { width: 100%; margin-bottom: 6px; }
+
+    .ssh-input-half { flex: 1; }
+
+    .ssh-row { display: flex; gap: 6px; margin-bottom: 6px; }
+
+    .ssh-go-btn {
+      background: var(--accent);
+      border: none;
+      color: var(--bg);
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .ssh-go-btn:hover { opacity: 0.88; }
+
+    .ssh-save-btn {
+      width: 100%;
+      background: var(--accent);
+      border: none;
+      color: var(--bg);
+      padding: 7px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      margin-top: 2px;
+    }
+
+    .ssh-save-btn:hover { opacity: 0.88; }
+
+    .ssh-empty {
+      padding: 10px 14px 6px;
+      font-size: 12px;
+      color: var(--fg-dim);
+    }
+
   </style>
 </head>
 <body>
@@ -1632,6 +1779,170 @@
         newTabBtn.innerHTML = '+';
         newTabBtn.onclick = () => this.addTab();
         tabbar.appendChild(newTabBtn);
+
+        const sshBtn = document.createElement('button');
+        sshBtn.className = 'ssh-btn';
+        sshBtn.id = 'sshMenuBtn';
+        sshBtn.innerHTML = '⌁ SSH';
+        sshBtn.title = 'SSH Connections';
+        sshBtn.onclick = () => this.toggleSshDropdown(sshBtn);
+        tabbar.appendChild(sshBtn);
+      }
+
+      // ─── SSH Manager ─────────────────────────────────────────────────────────
+
+      async toggleSshDropdown(btn) {
+        const existing = document.getElementById('sshDropdown');
+        if (existing) { existing.remove(); btn.classList.remove('active'); return; }
+
+        btn.classList.add('active');
+        const hosts = await this.loadSshHosts();
+        const dropdown = document.createElement('div');
+        dropdown.className = 'ssh-dropdown';
+        dropdown.id = 'sshDropdown';
+
+        let html = '';
+
+        if (hosts.length > 0) {
+          html += `<div class="ssh-section-label">Saved Hosts</div>`;
+          hosts.forEach((h, i) => {
+            const parts = [];
+            if (h.user) parts.push(h.user + '@');
+            parts.push(h.hostname || h.host);
+            if (h.port && h.port !== '22') parts.push(':' + h.port);
+            const detail = parts.join('');
+            html += `
+              <div class="ssh-host-item" data-index="${i}">
+                <div class="ssh-host-info">
+                  <div class="ssh-host-name">${this._escHtml(h.host)}</div>
+                  <div class="ssh-host-detail">${this._escHtml(detail)}</div>
+                </div>
+                <span class="ssh-host-connect">Connect →</span>
+              </div>`;
+          });
+          html += `<div class="ssh-dropdown-sep"></div>`;
+        } else {
+          html += `<div class="ssh-empty">No hosts in ~/.ssh/config</div>`;
+          html += `<div class="ssh-dropdown-sep"></div>`;
+        }
+
+        html += `
+          <div class="ssh-form-area">
+            <div class="ssh-form-label">Quick Connect</div>
+            <div class="ssh-quick-row">
+              <input class="ssh-input ssh-input-half" id="sshQuickInput" placeholder="user@hostname">
+              <button class="ssh-go-btn" id="sshQuickBtn">Connect</button>
+            </div>
+          </div>
+          <div class="ssh-dropdown-sep"></div>
+          <div class="ssh-form-area">
+            <div class="ssh-form-label">Add to ~/.ssh/config</div>
+            <input class="ssh-input ssh-input-full" id="sshAlias" placeholder="Alias (e.g. myserver)">
+            <input class="ssh-input ssh-input-full" id="sshHostname" placeholder="Hostname or IP">
+            <div class="ssh-row">
+              <input class="ssh-input ssh-input-half" id="sshUser" placeholder="Username">
+              <input class="ssh-input ssh-input-half" id="sshPort" placeholder="Port (22)">
+            </div>
+            <button class="ssh-save-btn" id="sshSaveBtn">Save &amp; Connect</button>
+          </div>`;
+
+        dropdown.innerHTML = html;
+
+        hosts.forEach((h, i) => {
+          const item = dropdown.querySelector(`[data-index="${i}"]`);
+          if (item) item.onclick = () => { dropdown.remove(); btn.classList.remove('active'); this.connectSshHost(h); };
+        });
+
+        dropdown.querySelector('#sshQuickBtn').onclick = () => {
+          const val = dropdown.querySelector('#sshQuickInput').value.trim();
+          if (!val) { dropdown.querySelector('#sshQuickInput').classList.add('error'); setTimeout(() => dropdown.querySelector('#sshQuickInput')?.classList.remove('error'), 1500); return; }
+          dropdown.remove(); btn.classList.remove('active');
+          this.openSshTab(val.includes(' ') ? val : `ssh ${val}`, val);
+        };
+
+        dropdown.querySelector('#sshQuickInput').onkeydown = (e) => {
+          if (e.key === 'Enter') dropdown.querySelector('#sshQuickBtn').click();
+          e.stopPropagation();
+        };
+
+        dropdown.querySelector('#sshSaveBtn').onclick = () => this.saveAndConnectSsh(dropdown, btn);
+
+        ['#sshAlias', '#sshHostname', '#sshUser', '#sshPort'].forEach(sel => {
+          dropdown.querySelector(sel).onkeydown = (e) => {
+            if (e.key === 'Enter') dropdown.querySelector('#sshSaveBtn').click();
+            e.stopPropagation();
+          };
+        });
+
+        document.body.appendChild(dropdown);
+
+        const rect = btn.getBoundingClientRect();
+        const dw = dropdown.offsetWidth;
+        const vw = window.innerWidth;
+        const left = Math.min(rect.right - dw, vw - dw - 8);
+        dropdown.style.left = Math.max(8, left) + 'px';
+        dropdown.style.top = (rect.bottom + 4) + 'px';
+
+        const dismiss = (e) => {
+          if (!dropdown.contains(e.target) && e.target !== btn) {
+            dropdown.remove();
+            btn.classList.remove('active');
+            document.removeEventListener('mousedown', dismiss);
+          }
+        };
+        setTimeout(() => document.addEventListener('mousedown', dismiss), 0);
+      }
+
+      _escHtml(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      }
+
+      async loadSshHosts() {
+        try {
+          const result = await window.terminalAPI.readSshConfig();
+          return result.hosts || [];
+        } catch { return []; }
+      }
+
+      connectSshHost(host) {
+        this.openSshTab(`ssh ${host.host}`, host.host);
+      }
+
+      async saveAndConnectSsh(dropdown, btn) {
+        const alias = dropdown.querySelector('#sshAlias').value.trim();
+        const hostname = dropdown.querySelector('#sshHostname').value.trim();
+        const user = dropdown.querySelector('#sshUser').value.trim();
+        const port = dropdown.querySelector('#sshPort').value.trim() || '22';
+
+        const markError = (sel) => {
+          const el = dropdown.querySelector(sel);
+          el.classList.add('error');
+          el.focus();
+          setTimeout(() => el?.classList.remove('error'), 1500);
+        };
+
+        if (!alias) { markError('#sshAlias'); return; }
+        if (!hostname) { markError('#sshHostname'); return; }
+
+        const result = await window.terminalAPI.writeSshConfig({ alias, hostname, user, port });
+        if (result.success) {
+          dropdown.remove();
+          btn.classList.remove('active');
+          this.openSshTab(`ssh ${alias}`, alias);
+        }
+      }
+
+      async openSshTab(cmd, title) {
+        if (!this.currentWorkspace) return;
+        const id = Date.now().toString();
+        const tab = { id, title: title || 'ssh', terminals: [], activeTerminalIndex: 0 };
+        this.currentWorkspace.tabs.push(tab);
+        await this.createTerminalForTab(tab);
+        this.setActiveTab(id);
+        this.renderTabs();
+        await new Promise(r => setTimeout(r, 120));
+        const t = tab.terminals[0];
+        if (t) window.terminalAPI.write(t.id, cmd + '\n');
       }
 
       showCommandPalette() {
@@ -1672,6 +1983,7 @@
         document.getElementById('commandPalette').classList.remove('visible');
         document.getElementById('searchOverlay').classList.remove('visible');
         document.getElementById('settingsOverlay').classList.remove('visible');
+        document.getElementById('sshDropdown')?.remove();
       }
 
       showSettings() {

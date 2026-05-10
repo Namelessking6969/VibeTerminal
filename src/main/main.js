@@ -383,6 +383,57 @@ ipcMain.handle('get-cwd', () => os.homedir());
 
 ipcMain.handle('get-platform', () => process.platform);
 
+// SSH Config
+const SSH_CONFIG_PATH = path.join(os.homedir(), '.ssh', 'config');
+
+function parseSshConfig(content) {
+  const hosts = [];
+  let current = null;
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const m = trimmed.match(/^(\S+)\s+(.+)$/);
+    if (!m) continue;
+    const key = m[1].toLowerCase();
+    const value = m[2].trim();
+    if (key === 'host') {
+      if (current && !current.host.includes('*')) hosts.push(current);
+      current = { host: value, hostname: '', user: '', port: '22' };
+    } else if (current) {
+      if (key === 'hostname') current.hostname = value;
+      else if (key === 'user') current.user = value;
+      else if (key === 'port') current.port = value;
+    }
+  }
+  if (current && !current.host.includes('*')) hosts.push(current);
+  return hosts;
+}
+
+ipcMain.handle('ssh-read-config', () => {
+  try {
+    if (!fs.existsSync(SSH_CONFIG_PATH)) return { hosts: [] };
+    return { hosts: parseSshConfig(fs.readFileSync(SSH_CONFIG_PATH, 'utf8')) };
+  } catch (e) {
+    log.error('ssh-read-config error:', e);
+    return { hosts: [] };
+  }
+});
+
+ipcMain.handle('ssh-write-config', (event, { alias, hostname, user, port }) => {
+  try {
+    const sshDir = path.join(os.homedir(), '.ssh');
+    if (!fs.existsSync(sshDir)) fs.mkdirSync(sshDir, { mode: 0o700 });
+    let entry = `\nHost ${alias}\n    HostName ${hostname}\n`;
+    if (user) entry += `    User ${user}\n`;
+    if (port && port !== '22') entry += `    Port ${port}\n`;
+    fs.appendFileSync(SSH_CONFIG_PATH, entry, 'utf8');
+    return { success: true };
+  } catch (e) {
+    log.error('ssh-write-config error:', e);
+    return { success: false, error: e.message };
+  }
+});
+
 // App events
 app.whenReady().then(() => {
   log.info('App ready, creating window');
