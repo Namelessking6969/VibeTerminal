@@ -389,6 +389,13 @@ ipcMain.handle('get-cwd', () => os.homedir());
 
 ipcMain.handle('get-platform', () => process.platform);
 
+ipcMain.handle('get-app-version', () => app.getVersion());
+
+ipcMain.on('open-external', (event, url) => {
+  const allowed = /^https:\/\/github\.com\//;
+  if (allowed.test(url)) shell.openExternal(url);
+});
+
 // SSH Config
 const SSH_CONFIG_PATH = path.join(os.homedir(), '.ssh', 'config');
 

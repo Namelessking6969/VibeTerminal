@@ -63,5 +63,8 @@ contextBridge.exposeInMainWorld('terminalAPI', {
   onUpdateStatus: (callback) => {
     const handler = (event, data) => callback(data);
     ipcRenderer.on('update-status', handler);
-  }
+  },
+
+  openExternal: (url) => ipcRenderer.send('open-external', url),
+  getAppVersion: () => ipcRenderer.invoke('get-app-version')
 });
