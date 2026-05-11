@@ -1329,6 +1329,21 @@
           if (e.key === 'Escape') this.hideOverlays();
         });
 
+        // Capture-phase handler so shortcuts fire even when xterm has keyboard focus.
+        // On Linux/Wayland, Electron menu accelerators don't reliably reach the renderer
+        // when a canvas-based element (xterm) has focus, so we intercept here instead.
+        document.addEventListener('keydown', (e) => {
+          const mod = e.ctrlKey || e.metaKey;
+          if (!mod) return;
+          // Ctrl+Shift+D → vertical split. Captured before xterm so it doesn't reach the PTY.
+          // Ctrl+D (no shift) is intentionally left alone — it sends EOF to the shell.
+          if (e.shiftKey && e.code === 'KeyD') {
+            e.preventDefault();
+            e.stopPropagation();
+            this.splitActiveTab('vertical');
+          }
+        }, true); // capture phase — fires before xterm's canvas event listeners
+
         // Track mouse position so contextmenu handler has valid coords on Linux
         document.addEventListener('mousemove', (e) => { this.lastMouseX = e.clientX; this.lastMouseY = e.clientY; }, true);
         document.addEventListener('mousedown', (e) => { this.lastMouseX = e.clientX; this.lastMouseY = e.clientY; }, true);
