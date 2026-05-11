@@ -1571,10 +1571,8 @@
           this.settings = { ...DEFAULT_SETTINGS };
         }
         try { this.platform = await window.terminalAPI.getPlatform(); } catch {}
-        this.applyTheme(this.settings.theme || 'vibe');
-        if (this.settings.opacity != null && this.settings.opacity < 1) {
-          window.terminalAPI.setOpacity(this.settings.opacity);
-        }
+        const initOpacity = this.settings.opacity != null ? this.settings.opacity : 1.0;
+        this.applyTheme(this.settings.theme || 'vibe', initOpacity);
         this.renderTitlebar();
         this.setupEventListeners();
         const hash = window.location.hash;
@@ -2221,12 +2219,17 @@
           const iconEl = document.createElement('span');
           iconEl.className = 'tab-icon';
           iconEl.textContent = '⌘';
-          if (tab.color) iconEl.style.color = tab.color;
 
           const titleEl = document.createElement('span');
           titleEl.className = 'tab-title';
           titleEl.textContent = tab.title;
-          if (tab.color) tabEl.style.setProperty('--tab-active', tab.color);
+
+          if (tab.color) {
+            iconEl.style.color = tab.color;
+            tabEl.style.borderTop = `3px solid ${tab.color}`;
+            tabEl.style.background = `${tab.color}18`;
+            tabEl.style.setProperty('--tab-active', tab.color);
+          }
 
           const closeEl = document.createElement('span');
           closeEl.className = 'tab-close';
@@ -2605,7 +2608,6 @@
         if (result.success) {
           this.settings = newSettings;
           this.applySettingsToAllTerminals();
-          window.terminalAPI.setOpacity(opacity);
           window.terminalAPI.setHotkey({ enabled: hotkeyEnabled, hotkey });
           this.hideSettings();
         }
@@ -2613,8 +2615,9 @@
 
       hideSettings() {
         const key = this.settings.theme || 'vibe';
-        this.applyTheme(key);
-        const xtermTheme = (THEMES[key] || THEMES.vibe).terminal;
+        const op = this.settings.opacity != null ? this.settings.opacity : 1.0;
+        this.applyTheme(key, op);
+        const xtermTheme = this.getXtermTheme(key, op);
         this.terminals.forEach(({ terminal, fitAddon }) => {
           this._applyXtermTheme(terminal, xtermTheme, fitAddon);
         });
@@ -2623,9 +2626,10 @@
 
       applySettingsToAllTerminals() {
         const s = this.settings;
-        this.applyTheme(s.theme || 'vibe');
+        const op = s.opacity != null ? s.opacity : 1.0;
+        this.applyTheme(s.theme || 'vibe', op);
         this.renderTitlebar();
-        const xtermTheme = this.getXtermTheme();
+        const xtermTheme = this.getXtermTheme(s.theme || 'vibe', op);
         this.terminals.forEach(({ terminal, fitAddon }) => {
           terminal.options.fontFamily = s.fontFamily;
           terminal.options.fontSize = s.fontSize;
@@ -2648,21 +2652,42 @@
         }
       }
 
-      getXtermTheme() {
-        const key = (this.settings.theme || 'vibe');
-        return (THEMES[key] || THEMES.vibe).terminal;
+      getXtermTheme(key, opacity) {
+        const themeKey = key || (this.settings.theme || 'vibe');
+        const base = (THEMES[themeKey] || THEMES.vibe).terminal;
+        const op = (opacity != null) ? opacity : (this.settings.opacity != null ? this.settings.opacity : 1.0);
+        if (op >= 1) return base;
+        return { ...base, background: this._withOpacity(base.background, op) };
       }
 
-      applyTheme(key) {
+      _hexToRgb(hex) {
+        const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return m ? { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) } : null;
+      }
+
+      _withOpacity(hex, opacity) {
+        if (opacity >= 1) return hex;
+        const rgb = this._hexToRgb(hex);
+        return rgb ? `rgba(${rgb.r},${rgb.g},${rgb.b},${opacity})` : hex;
+      }
+
+      applyTheme(key, opacity) {
         const theme = THEMES[key] || THEMES.vibe;
+        const op = (opacity != null) ? opacity : (this.settings.opacity != null ? this.settings.opacity : 1.0);
         const root = document.documentElement;
         Object.entries(theme.vars).forEach(([k, v]) => root.style.setProperty(k, v));
+        // Apply opacity to background-type variables
+        ['--bg', '--bg-secondary'].forEach(k => {
+          const hex = theme.vars[k];
+          if (hex && hex.startsWith('#')) root.style.setProperty(k, this._withOpacity(hex, op));
+        });
       }
 
       onThemePreviewChange() {
         const key = document.getElementById('settingsTheme').value;
-        this.applyTheme(key);
-        const xtermTheme = (THEMES[key] || THEMES.vibe).terminal;
+        const op = parseFloat(document.getElementById('settingsOpacity').value) || 1.0;
+        this.applyTheme(key, op);
+        const xtermTheme = this.getXtermTheme(key, op);
         this.terminals.forEach(({ terminal, fitAddon }) => {
           this._applyXtermTheme(terminal, xtermTheme, fitAddon);
         });
@@ -2870,8 +2895,12 @@
       // ─── Settings helpers ─────────────────────────────────────────────────────
 
       onOpacityPreview(value) {
-        document.getElementById('opacityLabel').textContent = Math.round(value * 100) + '%';
-        window.terminalAPI.setOpacity(parseFloat(value));
+        const op = parseFloat(value);
+        document.getElementById('opacityLabel').textContent = Math.round(op * 100) + '%';
+        const key = document.getElementById('settingsTheme').value || this.settings.theme || 'vibe';
+        this.applyTheme(key, op);
+        const xtermTheme = this.getXtermTheme(key, op);
+        this.terminals.forEach(({ terminal, fitAddon }) => this._applyXtermTheme(terminal, xtermTheme, fitAddon));
       }
 
       onHotkeyEnabledChange() {

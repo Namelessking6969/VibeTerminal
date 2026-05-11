@@ -141,7 +141,8 @@ function createWindow(opts = {}) {
     minHeight: 400,
     frame: false,
     titleBarStyle: 'hidden',
-    backgroundColor: '#0D0D0D',
+    transparent: true,
+    backgroundColor: '#00000000',
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.js'),
       contextIsolation: true,
@@ -419,10 +420,6 @@ ipcMain.handle('get-platform', () => process.platform);
 
 ipcMain.handle('get-app-version', () => app.getVersion());
 
-ipcMain.on('window-set-opacity', (event, value) => {
-  const win = BrowserWindow.fromWebContents(event.sender);
-  if (win) win.setOpacity(Math.max(0.1, Math.min(1, value)));
-});
 
 ipcMain.handle('set-hotkey', (event, { enabled, hotkey }) => {
   if (enabled && hotkey) {
