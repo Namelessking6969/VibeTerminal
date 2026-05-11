@@ -4,3 +4,6 @@ dpm-debug.log
 .DS_Store
 dist/
 !build/vibeterminal.png
+src/**/*.js
+src/**/*.js.map
+src/renderer/renderer.bundle.js
