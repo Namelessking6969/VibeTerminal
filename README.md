@@ -1,7 +1,7 @@
 # VibeTerminal
 
 A beautiful, feature-rich terminal emulator built with Electron, xterm.js, and node-pty. Designed for developers and power users who want a visually stunning terminal experience without sacrificing speed or flexibility.
- 
+
 **Platform:** macOS · Windows · Linux  
 **License:** MIT
 
@@ -12,6 +12,8 @@ A beautiful, feature-rich terminal emulator built with Electron, xterm.js, and n
 ### Workspaces & Tabs
 - **Multiple workspaces** — organize your terminal sessions into named workspaces, visible in the workspace bar at the top
 - **Unlimited tabs** per workspace — open as many terminal sessions as you need side by side
+- **Tab colors** — right-click any tab and pick from 8 colors; colored tabs show a tinted background and a colored top border for instant visual identification
+- **Tab activity indicator** — background tabs pulse with a glowing dot when they receive new output, so you never miss a finished build or command
 - **Rename tabs and workspaces** — double-click or right-click to rename inline
 - **Right-click context menus** on both tabs and workspace items for quick actions
 - **Undock workspaces** — pop any workspace out into its own window with the ↗ button or via right-click
@@ -21,6 +23,13 @@ A beautiful, feature-rich terminal emulator built with Electron, xterm.js, and n
 - **Horizontal splits** — `Ctrl/Cmd+D`
 - **Vertical splits** — `Ctrl/Cmd+Shift+D`
 - Multiple terminals inside a single tab for side-by-side workflows
+- **Broadcast Input** — press `Ctrl/Cmd+Shift+B` or click the `⊕ BC` button in the tab bar to type in all split panes simultaneously; useful for running the same command across multiple servers or environments at once
+
+### Paste History
+Press `Ctrl/Cmd+Shift+H` to open the Paste History panel — a scrollable list of the last 50 things you copied or pasted. Click any entry to instantly paste it into the active terminal. History is deduplicated (re-pasting moves an item to the top) and can be cleared in one click.
+
+### Hotkey Window
+Enable a global keyboard shortcut in **Settings → Hotkey Window** to summon and dismiss VibeTerminal from any application — no need to switch windows manually. The shortcut and default (`CommandOrControl+\``) are fully configurable.
 
 ### Themes
 Five built-in themes, switchable live from Settings with instant preview:
@@ -34,6 +43,9 @@ Five built-in themes, switchable live from Settings with instant preview:
 | **Catppuccin Mocha** | Lavender `#CBA6F7` | Pastel dark |
 
 Each theme fully styles the titlebar, tab bar, workspace bar, status bar, and the xterm.js terminal canvas.
+
+### Window Opacity
+Adjust the terminal background transparency from 20% to 100% via **Settings → Appearance → Opacity**. The slider updates live so you can find the right balance before saving. Opacity is applied via CSS rgba, meaning text stays fully crisp while the background lets content show through.
 
 ### Neon Cursor Glow
 The cursor renders with a CSS `box-shadow` glow matching the active theme accent color. Three cursor shapes available: **block**, **bar**, and **underline** — all with optional blink.
@@ -62,13 +74,14 @@ Available commands:
 - New Workspace / Next Workspace / Previous Workspace
 - Clear Terminal
 - Search
+- Paste History
+- Toggle Broadcast Input
 - Settings
 
 ### Terminal Search
 Press `Ctrl/Cmd+F` to open the search overlay, anchored above the status bar:
 - **Case-sensitive** toggle (`Aa` button)
 - **Regex** toggle (`.*` button)
-- Match count display
 - Navigate between matches with Enter / Shift+Enter
 - Powered by xterm.js `SearchAddon`
 
@@ -83,8 +96,14 @@ URLs and file paths in the terminal output are auto-detected and made clickable 
 
 ### Copy / Paste
 - **Copy:** `Ctrl+Shift+C` (or `Cmd+Shift+C` on macOS) — copies the current selection
-- **Paste:** `Ctrl+Shift+V` / `Ctrl+V` / `Cmd+V` — pastes from clipboard
+- **Paste:** `Ctrl+Shift+V` / `Ctrl+V` / `Cmd+V` — pastes from clipboard; automatically recorded in Paste History
 - **Right-click:** copies selection if text is selected; pastes from clipboard if nothing is selected
+
+### SSH Manager
+Click the **⌁ SSH** button in the tab bar to open the SSH panel:
+- **Saved hosts** — reads `~/.ssh/config` and lists all configured hosts; click to connect in a new tab
+- **Quick connect** — type `user@hostname` and hit Connect for one-off sessions
+- **Save & Connect** — fill in alias, hostname, user, and port to append a new entry to `~/.ssh/config` and connect immediately
 
 ### Cross-Platform Titlebar
 The titlebar adapts to the OS automatically, or can be forced to a specific style in Settings:
@@ -107,7 +126,9 @@ Open with `Ctrl/Cmd+,` or via the gear icon in the titlebar. Settings persist to
 | Cursor Style | Block, Bar, Underline |
 | Cursor Blink | On / Off |
 | Scrollback | 100–100,000 lines (default 10,000) |
+| Opacity | 20%–100% background transparency |
 | Shell Path | Any shell binary (empty = system default) |
+| Hotkey Window | Global shortcut to show/hide the window from any app |
 
 ---
 
@@ -122,6 +143,8 @@ Open with `Ctrl/Cmd+,` or via the gear icon in the titlebar. Settings persist to
 | Previous Tab | `⌘⇧[` | `Ctrl+Shift+[` |
 | Split Horizontally | `⌘D` | `Ctrl+D` |
 | Split Vertically | `⌘⇧D` | `Ctrl+Shift+D` |
+| Toggle Broadcast Input | `⌘⇧B` | `Ctrl+Shift+B` |
+| Paste History | `⌘⇧H` | `Ctrl+Shift+H` |
 | New Workspace | `⌘⇧N` | `Ctrl+Shift+N` |
 | Next Workspace | `⌘⇧.` | `Ctrl+Shift+.` |
 | Previous Workspace | `⌘⇧,` | `Ctrl+Shift+,` |
