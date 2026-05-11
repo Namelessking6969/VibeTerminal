@@ -342,11 +342,12 @@
     .split-container { display: flex; width: 100%; height: 100%; }
     .split-container.vertical { flex-direction: column; }
     .split-container.horizontal { flex-direction: row; }
-    .split-pane { flex: 1; position: relative; min-width: 100px; min-height: 100px; }
-    .split-divider { background: var(--border); z-index: 10; }
-    .split-divider.horizontal { width: 1px; cursor: col-resize; }
-    .split-divider.vertical { height: 1px; cursor: row-resize; }
-    .split-divider:hover { background: var(--accent-dim); }
+    .split-pane { flex: 1; position: relative; min-width: 100px; min-height: 100px; overflow: hidden; }
+    .split-pane .terminal-wrapper { position: absolute; inset: 0; width: auto; height: auto; }
+    .split-divider { background: var(--border); z-index: 10; flex-shrink: 0; }
+    .split-divider.horizontal { width: 4px; cursor: col-resize; }
+    .split-divider.vertical { height: 4px; cursor: row-resize; }
+    .split-divider:hover, .split-divider.dragging { background: var(--accent); }
 
     /* Workspace Bar */
     .workspacebar {
@@ -1356,8 +1357,8 @@
           tab.terminals.forEach(t => {
             window.terminalAPI.kill(t.id);
             this.terminals.delete(t.id);
-            if (t.container) t.container.remove();
           });
+          if (tab.container) tab.container.remove();
         });
 
         const index = this.workspaces.findIndex(w => w.id === id);
@@ -1570,7 +1571,7 @@
         const shellPath = await window.terminalAPI.getShellPath();
         const shell = shellPath.split('/').pop();
 
-        const tab = { id, title: shell, terminals: [], activeTerminalIndex: 0 };
+        const tab = { id, title: shell, terminals: [], activeTerminalIndex: 0, container: null, splitDirection: null };
         this.currentWorkspace.tabs.push(tab);
         await this.createTerminalForTab(tab);
         this.setActiveTab(id);
@@ -1578,87 +1579,95 @@
       }
 
       async createTerminalForTab(tab) {
-        const result = await window.terminalAPI.createTerminal({ cols: 80, rows: 24 });
-
-        if (result.success) {
+        if (!tab.container) {
           const container = document.createElement('div');
           container.className = 'terminal-view';
           container.dataset.tabId = tab.id;
-
-          const wrapper = document.createElement('div');
-          wrapper.className = 'terminal-wrapper';
-          container.appendChild(wrapper);
           document.getElementById('terminalContainer').appendChild(container);
-
-          const s = this.settings;
-          const terminal = new Terminal({
-            theme: this.getXtermTheme(),
-            fontFamily: s.fontFamily,
-            fontSize: s.fontSize,
-            cursorBlink: s.cursorBlink,
-            cursorStyle: s.cursorStyle,
-            scrollback: s.scrollback,
-            allowProposedApi: true
-          });
-
-          const fitAddon = new FitAddon.FitAddon();
-          const searchAddon = new SearchAddon.SearchAddon();
-          const webLinksAddon = new WebLinksAddon.WebLinksAddon();
-
-          terminal.loadAddon(fitAddon);
-          terminal.loadAddon(searchAddon);
-          terminal.loadAddon(webLinksAddon);
-
-          terminal.open(wrapper);
-          fitAddon.fit();
-
-          // Copy: Ctrl+Shift+C  |  Paste: Ctrl+Shift+V or Ctrl+V
-          terminal.attachCustomKeyEventHandler((e) => {
-            if (e.type !== 'keydown') return true;
-            const mod = e.ctrlKey || e.metaKey;
-            if (mod && e.shiftKey && e.key === 'C') {
-              const sel = terminal.getSelection();
-              if (sel) navigator.clipboard.writeText(sel).catch(() => {});
-              return false;
-            }
-            if (mod && (e.key === 'v' || (e.shiftKey && e.key === 'V'))) {
-              navigator.clipboard.readText().then(text => {
-                if (text) terminal.paste(text);
-              }).catch(() => {});
-              return false;
-            }
-            return true;
-          });
-
-          // Right-click pastes from clipboard
-          wrapper.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            const sel = terminal.getSelection();
-            if (sel) {
-              navigator.clipboard.writeText(sel).catch(() => {});
-            } else {
-              navigator.clipboard.readText().then(text => {
-                if (text) terminal.paste(text);
-              }).catch(() => {});
-            }
-          });
-
-          const terminalData = { id: result.id, terminal, fitAddon, searchAddon, container };
-          this.terminals.set(result.id, terminalData);
-          tab.terminals.push(terminalData);
-
-          terminal.onData((data) => {
-            window.terminalAPI.write(result.id, data);
-          });
-
-          terminal.onResize(({ cols, rows }) => {
-            window.terminalAPI.resize(result.id, cols, rows);
-            document.getElementById('dimensions').textContent = `${cols}x${rows}`;
-          });
-
-          window.addEventListener('resize', () => fitAddon.fit());
-          terminal.focus();
+          tab.container = container;
         }
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'terminal-wrapper';
+        tab.container.appendChild(wrapper);
+
+        await this._spawnTerminalInWrapper(tab, wrapper);
+      }
+
+      async _spawnTerminalInWrapper(tab, wrapper) {
+        const result = await window.terminalAPI.createTerminal({ cols: 80, rows: 24 });
+        if (!result.success) return;
+
+        const s = this.settings;
+        const terminal = new Terminal({
+          theme: this.getXtermTheme(),
+          fontFamily: s.fontFamily,
+          fontSize: s.fontSize,
+          cursorBlink: s.cursorBlink,
+          cursorStyle: s.cursorStyle,
+          scrollback: s.scrollback,
+          allowProposedApi: true
+        });
+
+        const fitAddon = new FitAddon.FitAddon();
+        const searchAddon = new SearchAddon.SearchAddon();
+        const webLinksAddon = new WebLinksAddon.WebLinksAddon();
+
+        terminal.loadAddon(fitAddon);
+        terminal.loadAddon(searchAddon);
+        terminal.loadAddon(webLinksAddon);
+        terminal.open(wrapper);
+        fitAddon.fit();
+
+        // Copy: Ctrl+Shift+C  |  Paste: Ctrl+Shift+V or Ctrl+V
+        terminal.attachCustomKeyEventHandler((e) => {
+          if (e.type !== 'keydown') return true;
+          const mod = e.ctrlKey || e.metaKey;
+          if (mod && e.shiftKey && e.key === 'C') {
+            const sel = terminal.getSelection();
+            if (sel) navigator.clipboard.writeText(sel).catch(() => {});
+            return false;
+          }
+          if (mod && (e.key === 'v' || (e.shiftKey && e.key === 'V'))) {
+            navigator.clipboard.readText().then(text => {
+              if (text) terminal.paste(text);
+            }).catch(() => {});
+            return false;
+          }
+          return true;
+        });
+
+        // Right-click pastes from clipboard
+        wrapper.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          const sel = terminal.getSelection();
+          if (sel) {
+            navigator.clipboard.writeText(sel).catch(() => {});
+          } else {
+            navigator.clipboard.readText().then(text => {
+              if (text) terminal.paste(text);
+            }).catch(() => {});
+          }
+        });
+
+        const terminalData = { id: result.id, terminal, fitAddon, searchAddon, wrapper };
+        this.terminals.set(result.id, terminalData);
+        tab.terminals.push(terminalData);
+        tab.activeTerminalIndex = tab.terminals.length - 1;
+
+        terminal.onData((data) => window.terminalAPI.write(result.id, data));
+        terminal.onResize(({ cols, rows }) => {
+          window.terminalAPI.resize(result.id, cols, rows);
+          document.getElementById('dimensions').textContent = `${cols}x${rows}`;
+        });
+
+        wrapper.addEventListener('mousedown', () => {
+          tab.activeTerminalIndex = tab.terminals.indexOf(terminalData);
+          terminal.focus();
+        });
+
+        window.addEventListener('resize', () => fitAddon.fit());
+        terminal.focus();
       }
 
       closeTab(tabId) {
@@ -1672,8 +1681,8 @@
         tab.terminals.forEach(t => {
           window.terminalAPI.kill(t.id);
           this.terminals.delete(t.id);
-          if (t.container) t.container.remove();
         });
+        if (tab.container) tab.container.remove();
 
         ws.tabs.splice(index, 1);
 
@@ -1692,9 +1701,11 @@
         if (this.currentWorkspace) this.currentWorkspace.activeTabId = tabId;
         document.querySelectorAll('.terminal-view').forEach(v => v.classList.remove('active'));
         const tab = this.tabs.find(t => t.id === tabId);
-        if (tab && tab.terminals[tab.activeTerminalIndex]) {
-          tab.terminals[tab.activeTerminalIndex].container.classList.add('active');
-          tab.terminals[tab.activeTerminalIndex].fitAddon.fit();
+        if (tab && tab.container) {
+          tab.container.classList.add('active');
+          tab.terminals.forEach(t => t.fitAddon.fit());
+          const active = tab.terminals[tab.activeTerminalIndex];
+          if (active) active.terminal.focus();
         }
         this.renderTabs();
       }
@@ -1711,11 +1722,89 @@
         this.setActiveTab(this.tabs[(index - 1 + this.tabs.length) % this.tabs.length].id);
       }
 
-      splitActiveTab(direction) {
+      async splitActiveTab(direction) {
         const tab = this.tabs.find(t => t.id === this.activeTabId);
-        if (!tab) return;
-        this.createTerminalForTab(tab);
-        this.setActiveTab(tab.id);
+        if (!tab || tab.terminals.length === 0 || tab.splitDirection) return;
+
+        tab.splitDirection = direction;
+        const tabRoot = tab.container;
+
+        // Pull the existing terminal wrapper out of the tab root
+        const existingTermData = tab.terminals[0];
+        const existingWrapper = existingTermData.wrapper;
+        existingWrapper.remove();
+
+        // Build the split layout
+        const splitContainer = document.createElement('div');
+        splitContainer.className = `split-container ${direction}`;
+
+        const pane1 = document.createElement('div');
+        pane1.className = 'split-pane';
+        pane1.appendChild(existingWrapper);
+
+        const divider = document.createElement('div');
+        divider.className = `split-divider ${direction}`;
+
+        const pane2 = document.createElement('div');
+        pane2.className = 'split-pane';
+
+        splitContainer.appendChild(pane1);
+        splitContainer.appendChild(divider);
+        splitContainer.appendChild(pane2);
+        tabRoot.appendChild(splitContainer);
+
+        this._setupDividerDrag(divider, pane1, pane2, direction, tab);
+
+        // Re-fit the existing terminal now that it's in a pane
+        setTimeout(() => existingTermData.fitAddon.fit(), 50);
+
+        // Spawn a new terminal in pane2
+        const wrapper2 = document.createElement('div');
+        wrapper2.className = 'terminal-wrapper';
+        pane2.appendChild(wrapper2);
+        await this._spawnTerminalInWrapper(tab, wrapper2);
+      }
+
+      _setupDividerDrag(divider, pane1, pane2, direction, tab) {
+        const isHorizontal = direction === 'horizontal';
+
+        divider.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          divider.classList.add('dragging');
+
+          const container = pane1.parentElement;
+          const containerRect = container.getBoundingClientRect();
+          const startPos = isHorizontal ? e.clientX : e.clientY;
+          const startSize1 = isHorizontal ? pane1.offsetWidth : pane1.offsetHeight;
+          const totalSize = isHorizontal ? containerRect.width : containerRect.height;
+          const dividerSize = isHorizontal ? divider.offsetWidth : divider.offsetHeight;
+
+          const onMove = (me) => {
+            const delta = (isHorizontal ? me.clientX : me.clientY) - startPos;
+            const newSize1 = Math.max(100, Math.min(totalSize - dividerSize - 100, startSize1 + delta));
+            const newSize2 = totalSize - dividerSize - newSize1;
+            pane1.style.flex = 'none';
+            pane2.style.flex = 'none';
+            if (isHorizontal) {
+              pane1.style.width = `${newSize1}px`;
+              pane2.style.width = `${newSize2}px`;
+            } else {
+              pane1.style.height = `${newSize1}px`;
+              pane2.style.height = `${newSize2}px`;
+            }
+            tab.terminals.forEach(t => t.fitAddon.fit());
+          };
+
+          const onUp = () => {
+            divider.classList.remove('dragging');
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+            tab.terminals.forEach(t => t.fitAddon.fit());
+          };
+
+          document.addEventListener('mousemove', onMove);
+          document.addEventListener('mouseup', onUp);
+        });
       }
 
       clearActiveTerminal() {
@@ -1935,7 +2024,7 @@
       async openSshTab(cmd, title) {
         if (!this.currentWorkspace) return;
         const id = Date.now().toString();
-        const tab = { id, title: title || 'ssh', terminals: [], activeTerminalIndex: 0 };
+        const tab = { id, title: title || 'ssh', terminals: [], activeTerminalIndex: 0, container: null, splitDirection: null };
         this.currentWorkspace.tabs.push(tab);
         await this.createTerminalForTab(tab);
         this.setActiveTab(id);
