@@ -77,6 +77,12 @@ interface SshWriteConfigOptions {
   port?: string;
 }
 
+function getIconPath(): string {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'icon.png')
+    : path.join(__dirname, '../../build/icon.png');
+}
+
 let mainWindow: BrowserWindow | null = null;
 const terminals = new Map<number, TerminalEntry>();
 let terminalIdCounter = 0;
@@ -211,7 +217,7 @@ function createWindow(opts: WindowOptions = {}): BrowserWindow {
       nodeIntegration: false,
       sandbox: false,
     },
-    icon: path.join(__dirname, '../../build/icon.png'),
+    icon: getIconPath(),
   });
 
   const loadOptions = opts.workspaceName
