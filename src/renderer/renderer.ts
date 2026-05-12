@@ -694,7 +694,9 @@ class TerminalManager {
 
     const fitAddon = new FitAddon();
     const searchAddon = new SearchAddon();
-    const webLinksAddon = new WebLinksAddon();
+    const webLinksAddon = new WebLinksAddon((_event, url) => {
+      window.terminalAPI.openExternal(url);
+    });
 
     terminal.loadAddon(fitAddon);
     terminal.loadAddon(searchAddon);
@@ -999,6 +1001,20 @@ class TerminalManager {
     broadcastBtn.textContent = '⊕ BC';
     broadcastBtn.onclick = () => this.toggleBroadcast();
     tabbar.appendChild(broadcastBtn);
+
+    const opencodeBtn = document.createElement('button');
+    opencodeBtn.className = 'split-btn';
+    opencodeBtn.title = 'Open Opencode in a new tab';
+    opencodeBtn.textContent = 'Opencode';
+    opencodeBtn.onclick = () => this.openSshTab('opencode', 'Opencode');
+    tabbar.appendChild(opencodeBtn);
+
+    const claudeBtn = document.createElement('button');
+    claudeBtn.className = 'split-btn';
+    claudeBtn.title = 'Open Claude in a new tab';
+    claudeBtn.textContent = 'Claude';
+    claudeBtn.onclick = () => this.openSshTab('claude', 'Claude');
+    tabbar.appendChild(claudeBtn);
 
     const sshBtn = document.createElement('button');
     sshBtn.className = 'ssh-btn'; sshBtn.id = 'sshMenuBtn'; sshBtn.innerHTML = '⌁ SSH';
@@ -1369,6 +1385,36 @@ class TerminalManager {
     if (result.success) {
       dropdown.remove(); btn.classList.remove('active');
       this.openSshTab(`ssh ${alias}`, alias);
+    }
+  }
+
+  async sendFeedback(): Promise<void> {
+    const textarea = document.getElementById('feedbackText') as HTMLTextAreaElement;
+    const statusEl = document.getElementById('feedbackStatus')!;
+    const sendBtn = document.getElementById('feedbackSendBtn') as HTMLButtonElement;
+    const text = textarea.value.trim();
+    if (!text) { statusEl.textContent = 'Please write something first.'; return; }
+
+    sendBtn.disabled = true;
+    statusEl.textContent = 'Sending...';
+
+    try {
+      const res = await fetch('https://discord.com/api/webhooks/1503746290821890179/BhkQyscm6qN4-3-8rTq7sb7STK2C9jD1HfqGnVyN1bkbwG2idHdLLJ0yCVToxgCDhxBz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: `**VibeTerminal Feedback**\n${text}` }),
+      });
+      if (res.ok) {
+        textarea.value = '';
+        statusEl.textContent = 'Sent! Thanks for the feedback.';
+      } else {
+        statusEl.textContent = 'Failed to send. Try again.';
+      }
+    } catch {
+      statusEl.textContent = 'Network error. Try again.';
+    } finally {
+      sendBtn.disabled = false;
+      setTimeout(() => { statusEl.textContent = ''; }, 4000);
     }
   }
 

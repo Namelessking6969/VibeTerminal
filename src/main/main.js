@@ -189,6 +189,11 @@ function createWindow(opts = {}) {
         ? { hash: `ws=${encodeURIComponent(opts.workspaceName)}` }
         : {};
     win.loadFile(path_1.default.join(__dirname, '../renderer/index.html'), loadOptions);
+    win.webContents.setWindowOpenHandler(({ url }) => {
+        if (/^https?:\/\//.test(url))
+            electron_1.shell.openExternal(url);
+        return { action: 'deny' };
+    });
     // Prevent Electron from showing a native context menu on Linux that would
     // overlap the renderer's custom HTML context menu
     win.webContents.on('context-menu', (e) => e.preventDefault());
@@ -446,7 +451,7 @@ electron_1.ipcMain.handle('set-hotkey', (_event, { enabled, hotkey }) => {
     return { success: true };
 });
 electron_1.ipcMain.on('open-external', (_event, url) => {
-    if (/^https:\/\/github\.com\//.test(url))
+    if (/^https?:\/\//.test(url))
         electron_1.shell.openExternal(url);
 });
 // SSH Config

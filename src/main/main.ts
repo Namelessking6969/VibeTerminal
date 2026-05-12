@@ -225,6 +225,11 @@ function createWindow(opts: WindowOptions = {}): BrowserWindow {
     : {};
   win.loadFile(path.join(__dirname, '../renderer/index.html'), loadOptions);
 
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//.test(url)) shell.openExternal(url);
+    return { action: 'deny' };
+  });
+
   // Prevent Electron from showing a native context menu on Linux that would
   // overlap the renderer's custom HTML context menu
   win.webContents.on('context-menu', (e) => e.preventDefault());
@@ -500,7 +505,7 @@ ipcMain.handle('set-hotkey', (_event: IpcMainInvokeEvent, { enabled, hotkey }: S
 });
 
 ipcMain.on('open-external', (_event: IpcMainEvent, url: string) => {
-  if (/^https:\/\/github\.com\//.test(url)) shell.openExternal(url);
+  if (/^https?:\/\//.test(url)) shell.openExternal(url);
 });
 
 // SSH Config
