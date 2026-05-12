@@ -10,7 +10,6 @@ interface Settings {
   fontSize: number;
   cursorStyle: string;
   cursorBlink: boolean;
-  cursorGlow: boolean;
   scrollback: number;
   shell: string;
   theme: string;
@@ -143,7 +142,7 @@ const THEMES: Record<string, ThemeDefinition> = {
     vars: {
       '--bg': '#0D0D0D', '--bg-secondary': '#1A1A1A',
       '--fg': '#E0E0E0', '--fg-dim': '#888888',
-      '--cursor': '#00FF88', '--cursor-glow': 'rgba(0, 255, 136, 0.5)',
+      '--cursor': '#00FF88',
       '--selection': 'rgba(0, 255, 136, 0.2)',
       '--accent': '#00FF88', '--accent-dim': '#00FF8880',
       '--border': '#2A2A2A', '--tab-active': '#00FF88',
@@ -164,7 +163,7 @@ const THEMES: Record<string, ThemeDefinition> = {
     vars: {
       '--bg': '#282A36', '--bg-secondary': '#1E1F29',
       '--fg': '#F8F8F2', '--fg-dim': '#6272A4',
-      '--cursor': '#BD93F9', '--cursor-glow': 'rgba(189, 147, 249, 0.5)',
+      '--cursor': '#BD93F9',
       '--selection': 'rgba(189, 147, 249, 0.2)',
       '--accent': '#BD93F9', '--accent-dim': '#BD93F980',
       '--border': '#44475A', '--tab-active': '#BD93F9',
@@ -185,7 +184,7 @@ const THEMES: Record<string, ThemeDefinition> = {
     vars: {
       '--bg': '#2E3440', '--bg-secondary': '#3B4252',
       '--fg': '#ECEFF4', '--fg-dim': '#4C566A',
-      '--cursor': '#88C0D0', '--cursor-glow': 'rgba(136, 192, 208, 0.5)',
+      '--cursor': '#88C0D0',
       '--selection': 'rgba(136, 192, 208, 0.2)',
       '--accent': '#88C0D0', '--accent-dim': '#88C0D080',
       '--border': '#434C5E', '--tab-active': '#88C0D0',
@@ -206,7 +205,7 @@ const THEMES: Record<string, ThemeDefinition> = {
     vars: {
       '--bg': '#272822', '--bg-secondary': '#1E1F1C',
       '--fg': '#F8F8F2', '--fg-dim': '#75715E',
-      '--cursor': '#F8F8F0', '--cursor-glow': 'rgba(248, 248, 240, 0.4)',
+      '--cursor': '#F8F8F0',
       '--selection': 'rgba(249, 38, 114, 0.2)',
       '--accent': '#A6E22E', '--accent-dim': '#A6E22E80',
       '--border': '#3E3D32', '--tab-active': '#A6E22E',
@@ -227,7 +226,7 @@ const THEMES: Record<string, ThemeDefinition> = {
     vars: {
       '--bg': '#1E1E2E', '--bg-secondary': '#181825',
       '--fg': '#CDD6F4', '--fg-dim': '#6C7086',
-      '--cursor': '#F5E0DC', '--cursor-glow': 'rgba(203, 166, 247, 0.5)',
+      '--cursor': '#F5E0DC',
       '--selection': 'rgba(203, 166, 247, 0.2)',
       '--accent': '#CBA6F7', '--accent-dim': '#CBA6F780',
       '--border': '#313244', '--tab-active': '#CBA6F7',
@@ -250,7 +249,6 @@ const DEFAULT_SETTINGS: Settings = {
   fontSize: 13,
   cursorStyle: 'block',
   cursorBlink: true,
-  cursorGlow: true,
   scrollback: 10000,
   shell: '',
   theme: 'vibe',
@@ -324,8 +322,7 @@ class TerminalManager {
     }
     try { this.platform = await window.terminalAPI.getPlatform(); } catch {}
     const initOpacity = this.settings.opacity ?? 1.0;
-    this.applyTheme(this.settings.theme || 'vibe', initOpacity);
-    document.body.classList.toggle('cursor-glow', this.settings.cursorGlow ?? true);
+this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     this.renderTitlebar();
     this.setupEventListeners();
     const hash = window.location.hash;
@@ -1522,7 +1519,6 @@ class TerminalManager {
     (document.getElementById('settingsFontSize') as HTMLInputElement).value = String(s.fontSize);
     (document.getElementById('settingsCursorStyle') as HTMLSelectElement).value = s.cursorStyle;
     (document.getElementById('settingsCursorBlink') as HTMLInputElement).checked = s.cursorBlink;
-    (document.getElementById('settingsCursorGlow') as HTMLInputElement).checked = s.cursorGlow ?? true;
     (document.getElementById('settingsScrollback') as HTMLInputElement).value = String(s.scrollback);
     (document.getElementById('settingsShell') as HTMLInputElement).value = s.shell || '';
     document.getElementById('updateStatus')!.textContent = '';
@@ -1564,7 +1560,6 @@ class TerminalManager {
       fontSize: parseInt((document.getElementById('settingsFontSize') as HTMLInputElement).value, 10) || 13,
       cursorStyle: (document.getElementById('settingsCursorStyle') as HTMLSelectElement).value,
       cursorBlink: (document.getElementById('settingsCursorBlink') as HTMLInputElement).checked,
-      cursorGlow: (document.getElementById('settingsCursorGlow') as HTMLInputElement).checked,
       scrollback: parseInt((document.getElementById('settingsScrollback') as HTMLInputElement).value, 10) || 10000,
       shell: (document.getElementById('settingsShell') as HTMLInputElement).value.trim(),
       theme: (document.getElementById('settingsTheme') as HTMLSelectElement).value,
@@ -1598,17 +1593,22 @@ class TerminalManager {
     const s = this.settings;
     const op = s.opacity ?? 1.0;
     this.applyTheme(s.theme || 'vibe', op);
-    document.body.classList.toggle('cursor-glow', s.cursorGlow ?? true);
     this.renderTitlebar();
     const xtermTheme = this.getXtermTheme(s.theme || 'vibe', op);
     this.terminals.forEach(({ terminal, fitAddon }) => {
       terminal.options.fontFamily = s.fontFamily;
       terminal.options.fontSize = s.fontSize;
       terminal.options.cursorStyle = s.cursorStyle as 'block' | 'underline' | 'bar';
-      terminal.options.cursorBlink = s.cursorBlink;
-      terminal.options.scrollback = s.scrollback;
       this._applyXtermTheme(terminal, xtermTheme, fitAddon);
+      terminal.options.cursorBlink = s.cursorBlink;
+      this._repaintTerminal(terminal, fitAddon);
     });
+  }
+
+  _repaintTerminal(terminal: Terminal, fitAddon: FitAddon | null): void {
+    const { cols, rows } = terminal;
+    terminal.resize(Math.max(cols - 1, 1), rows);
+    if (fitAddon) fitAddon.fit();
   }
 
   _applyXtermTheme(terminal: Terminal, xtermTheme: ITheme, fitAddon: FitAddon | null): void {

@@ -13,7 +13,6 @@
       --fg: #E0E0E0;
       --fg-dim: #888888;
       --cursor: #00FF88;
-      --cursor-glow: rgba(0, 255, 136, 0.5);
       --selection: rgba(0, 255, 136, 0.2);
       --accent: #00FF88;
       --accent-dim: #00FF8880;
@@ -265,8 +264,6 @@
 
     .xterm-cursor-block { background: var(--cursor) !important; }
     .xterm-cursor-bar   { background: var(--cursor) !important; }
-    body.cursor-glow .xterm-cursor-block { box-shadow: 0 0 8px var(--cursor-glow), 0 0 16px var(--cursor-glow); }
-    body.cursor-glow .xterm-cursor-bar   { box-shadow: 0 0 8px var(--cursor-glow); }
 
     /* ─── Status Bar ────────────────────────────────────────────────────── */
     .statusbar {
@@ -909,10 +906,6 @@
           <div class="settings-checkbox-row">
             <input type="checkbox" id="settingsCursorBlink">
             <label class="settings-checkbox-label" for="settingsCursorBlink">Cursor Blink</label>
-          </div>
-          <div class="settings-checkbox-row">
-            <input type="checkbox" id="settingsCursorGlow">
-            <label class="settings-checkbox-label" for="settingsCursorGlow">Cursor Glow</label>
           </div>
           <div class="settings-row">
             <span class="settings-label">Scrollback</span>
