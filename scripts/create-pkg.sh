@@ -23,7 +23,7 @@ mkdir -p "$PKG_OUTPUT"
 
 # Create product metadata
 PRODUCT_NAME="$PROJECT_NAME"
-PRODUCT_VERSION="3.0.13"
+PRODUCT_VERSION="3.0.14"
 IDENTIFIER="com.vibeterminal.app"
 
 # Create PKG using productbuild
