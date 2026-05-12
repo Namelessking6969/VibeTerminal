@@ -10,6 +10,7 @@ interface Settings {
   fontSize: number;
   cursorStyle: string;
   cursorBlink: boolean;
+  cursorGlow: boolean;
   scrollback: number;
   shell: string;
   theme: string;
@@ -249,6 +250,7 @@ const DEFAULT_SETTINGS: Settings = {
   fontSize: 13,
   cursorStyle: 'block',
   cursorBlink: true,
+  cursorGlow: true,
   scrollback: 10000,
   shell: '',
   theme: 'vibe',
@@ -323,6 +325,7 @@ class TerminalManager {
     try { this.platform = await window.terminalAPI.getPlatform(); } catch {}
     const initOpacity = this.settings.opacity ?? 1.0;
     this.applyTheme(this.settings.theme || 'vibe', initOpacity);
+    document.body.classList.toggle('cursor-glow', this.settings.cursorGlow ?? true);
     this.renderTitlebar();
     this.setupEventListeners();
     const hash = window.location.hash;
@@ -1519,6 +1522,7 @@ class TerminalManager {
     (document.getElementById('settingsFontSize') as HTMLInputElement).value = String(s.fontSize);
     (document.getElementById('settingsCursorStyle') as HTMLSelectElement).value = s.cursorStyle;
     (document.getElementById('settingsCursorBlink') as HTMLInputElement).checked = s.cursorBlink;
+    (document.getElementById('settingsCursorGlow') as HTMLInputElement).checked = s.cursorGlow ?? true;
     (document.getElementById('settingsScrollback') as HTMLInputElement).value = String(s.scrollback);
     (document.getElementById('settingsShell') as HTMLInputElement).value = s.shell || '';
     document.getElementById('updateStatus')!.textContent = '';
@@ -1560,6 +1564,7 @@ class TerminalManager {
       fontSize: parseInt((document.getElementById('settingsFontSize') as HTMLInputElement).value, 10) || 13,
       cursorStyle: (document.getElementById('settingsCursorStyle') as HTMLSelectElement).value,
       cursorBlink: (document.getElementById('settingsCursorBlink') as HTMLInputElement).checked,
+      cursorGlow: (document.getElementById('settingsCursorGlow') as HTMLInputElement).checked,
       scrollback: parseInt((document.getElementById('settingsScrollback') as HTMLInputElement).value, 10) || 10000,
       shell: (document.getElementById('settingsShell') as HTMLInputElement).value.trim(),
       theme: (document.getElementById('settingsTheme') as HTMLSelectElement).value,
@@ -1593,6 +1598,7 @@ class TerminalManager {
     const s = this.settings;
     const op = s.opacity ?? 1.0;
     this.applyTheme(s.theme || 'vibe', op);
+    document.body.classList.toggle('cursor-glow', s.cursorGlow ?? true);
     this.renderTitlebar();
     const xtermTheme = this.getXtermTheme(s.theme || 'vibe', op);
     this.terminals.forEach(({ terminal, fitAddon }) => {

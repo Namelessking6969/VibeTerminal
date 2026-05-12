@@ -30,6 +30,7 @@ interface Settings {
   fontSize: number;
   cursorStyle: string;
   cursorBlink: boolean;
+  cursorGlow: boolean;
   scrollback: number;
   shell: string;
   theme: string;
@@ -92,6 +93,7 @@ const DEFAULT_SETTINGS: Settings = {
   fontSize: 13,
   cursorStyle: 'block',
   cursorBlink: true,
+  cursorGlow: true,
   scrollback: 10000,
   shell: '',
   theme: 'vibe',
