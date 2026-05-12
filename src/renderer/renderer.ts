@@ -803,7 +803,7 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
       tab.hasActivity = false;
       if (tab.container) {
         tab.container.classList.add('active');
-        tab.terminals.forEach(t => t.fitAddon.fit());
+        requestAnimationFrame(() => tab.terminals.forEach(t => t.fitAddon.fit()));
         const active = tab.terminals[tab.activeTerminalIndex];
         if (active) active.terminal.focus();
       }
