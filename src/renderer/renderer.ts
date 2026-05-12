@@ -107,7 +107,6 @@ declare global {
       onUpdateAvailable(callback: (data: { version: string }) => void): () => void;
       onUpdateDownloaded(callback: (data: { version: string }) => void): () => void;
       onUpdateStatus(callback: (data: { message: string }) => void): () => void;
-      setOpacity(value: number): void;
       setHotkey(opts: { enabled: boolean; hotkey: string }): Promise<{ success: boolean }>;
       openExternal(url: string): void;
       getAppVersion(): Promise<string>;

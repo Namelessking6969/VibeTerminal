@@ -211,7 +211,7 @@ function createWindow(opts: WindowOptions = {}): BrowserWindow {
       nodeIntegration: false,
       sandbox: false,
     },
-    icon: path.join(__dirname, '../build/icon.png'),
+    icon: path.join(__dirname, '../../build/icon.png'),
   });
 
   const loadOptions = opts.workspaceName

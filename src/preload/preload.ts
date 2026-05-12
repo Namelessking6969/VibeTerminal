@@ -83,7 +83,6 @@ const terminalAPI = {
     return () => ipcRenderer.removeListener('update-status', handler);
   },
 
-  setOpacity: (value: number) => ipcRenderer.send('window-set-opacity', value),
   setHotkey: (opts: { enabled: boolean; hotkey: string }) => ipcRenderer.invoke('set-hotkey', opts),
 
   openExternal: (url: string) => ipcRenderer.send('open-external', url),
