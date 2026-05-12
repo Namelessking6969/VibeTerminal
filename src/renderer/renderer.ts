@@ -714,6 +714,7 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
         return false;
       }
       if (mod && (e.key === 'v' || (e.shiftKey && e.key === 'V'))) {
+        e.preventDefault();
         navigator.clipboard.readText().then(text => {
           if (!text) return;
           this.addToPasteHistory(text);
