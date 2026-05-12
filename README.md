@@ -132,31 +132,6 @@ Open with `Ctrl/Cmd+,` or via the gear icon in the titlebar. Settings persist to
 
 ---
 
-## Keyboard Shortcuts
-
-| Action | macOS | Windows / Linux |
-|---|---|---|
-| New Tab | `⌘T` | `Ctrl+T` |
-| Close Tab | `⌘W` | `Ctrl+W` |
-| New Window | `⌘N` | `Ctrl+N` |
-| Next Tab | `⌘⇧]` | `Ctrl+Shift+]` |
-| Previous Tab | `⌘⇧[` | `Ctrl+Shift+[` |
-| Split Horizontally | `⌘D` | `Ctrl+D` |
-| Split Vertically | `⌘⇧D` | `Ctrl+Shift+D` |
-| Toggle Broadcast Input | `⌘⇧B` | `Ctrl+Shift+B` |
-| Paste History | `⌘⇧H` | `Ctrl+Shift+H` |
-| New Workspace | `⌘⇧N` | `Ctrl+Shift+N` |
-| Next Workspace | `⌘⇧.` | `Ctrl+Shift+.` |
-| Previous Workspace | `⌘⇧,` | `Ctrl+Shift+,` |
-| Clear Terminal | `⌘K` | `Ctrl+K` |
-| Search | `⌘F` | `Ctrl+F` |
-| Command Palette | `⌘⇧P` | `Ctrl+Shift+P` |
-| Settings | `⌘,` | `Ctrl+,` |
-| Copy | `⌘⇧C` | `Ctrl+Shift+C` |
-| Paste | `⌘V` | `Ctrl+V` / `Ctrl+Shift+V` |
-
----
-
 ## Tech Stack
 
 | Component | Library |
