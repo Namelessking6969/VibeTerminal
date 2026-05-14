@@ -80,8 +80,20 @@
             "x64",
             "arm64"
           ]
+        },
+        {
+          "target": "pkg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ]
+    },
+    "pkg": {
+      "scripts": "build/pkg-scripts",
+      "allowAnywhere": true,
+      "isRelocatable": false
     },
     "linux": {
       "category": "Development",

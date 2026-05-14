@@ -25,6 +25,7 @@ jobs:
           path: |
             dist/*.dmg
             dist/*.zip
+            dist/*.pkg
             dist/latest-mac.yml
           retention-days: 5
 
