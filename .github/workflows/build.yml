@@ -28,9 +28,9 @@ jobs:
             ZIPFILE="dist/VibeTerminal-${VERSION}${ARCH}-mac.zip"
             TMPDIR="sign-tmp${ARCH}"
             mkdir -p "$TMPDIR"
-            unzip -q "$ZIPFILE" -d "$TMPDIR"
+            ditto -xk "$ZIPFILE" "$TMPDIR"
             codesign --deep --force --sign - "$TMPDIR/VibeTerminal.app"
-            (cd "$TMPDIR" && zip -qr "../$ZIPFILE" "VibeTerminal.app")
+            (cd "$TMPDIR" && ditto -ck --keepParent --rsrc "VibeTerminal.app" "../$ZIPFILE")
             rm -rf "$TMPDIR"
           done
       - name: Build PKG installers
@@ -38,7 +38,7 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           chmod +x build/pkg-scripts/postinstall
           mkdir -p pkg-tmp-x64
-          unzip -q "dist/VibeTerminal-${VERSION}-mac.zip" -d pkg-tmp-x64
+          ditto -xk "dist/VibeTerminal-${VERSION}-mac.zip" pkg-tmp-x64
           pkgbuild \
             --component "pkg-tmp-x64/VibeTerminal.app" \
             --install-location /Applications \
@@ -48,7 +48,7 @@ jobs:
             "dist/VibeTerminal-${VERSION}.pkg"
           rm -rf pkg-tmp-x64
           mkdir -p pkg-tmp-arm64
-          unzip -q "dist/VibeTerminal-${VERSION}-arm64-mac.zip" -d pkg-tmp-arm64
+          ditto -xk "dist/VibeTerminal-${VERSION}-arm64-mac.zip" pkg-tmp-arm64
           pkgbuild \
             --component "pkg-tmp-arm64/VibeTerminal.app" \
             --install-location /Applications \
