@@ -971,7 +971,7 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
           { label: 'Set Color', action: () => this.showTabColorPicker(tab.id) },
           'separator',
           { label: '⊟  Split Horizontally', action: () => this.splitActivePane('horizontal') },
-          { label: '⊞  Split Vertically',   action: () => this.splitActivePane('vertical') },
+          { label: '⎅  Split Vertically',   action: () => this.splitActivePane('vertical') },
           'separator',
           { label: 'Close Tab', danger: true, action: () => this.closeTab(tab.id) },
         ]);
@@ -986,7 +986,7 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
 
     const splitHBtn = document.createElement('button');
     splitHBtn.className = 'split-btn';
-    splitHBtn.title = 'Split Horizontally (Ctrl+D)'; splitHBtn.innerHTML = '⊞';
+    splitHBtn.title = 'Split Horizontally (Ctrl+D)'; splitHBtn.innerHTML = '⎅';
     splitHBtn.onclick = () => this.splitActivePane('horizontal');
     tabbar.appendChild(splitHBtn);
 
