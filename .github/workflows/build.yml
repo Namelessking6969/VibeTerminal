@@ -23,7 +23,6 @@ jobs:
         run: |
           VERSION=$(node -p "require('./package.json').version")
           chmod +x build/pkg-scripts/postinstall
-
           mkdir -p pkg-tmp-x64
           unzip -q "dist/VibeTerminal-${VERSION}-mac.zip" -d pkg-tmp-x64
           pkgbuild \
@@ -34,7 +33,6 @@ jobs:
             --version "${VERSION}" \
             "dist/VibeTerminal-${VERSION}.pkg"
           rm -rf pkg-tmp-x64
-
           mkdir -p pkg-tmp-arm64
           unzip -q "dist/VibeTerminal-${VERSION}-arm64-mac.zip" -d pkg-tmp-arm64
           pkgbuild \
@@ -106,39 +104,8 @@ jobs:
       - name: Publish release
         run: |
           TAG="${GITHUB_REF_NAME}"
-          VERSION="${TAG#v}"
-
-          WHATS_NEW=""
-          if [ -f .release-notes ]; then
-            WHATS_NEW=$(cat .release-notes)
-          fi
-
-          DOWNLOADS=$(cat <<'HEREDOC'
-## Downloads
-
-| Platform | File | Notes |
-|----------|------|-------|
-| Linux | `.deb` | Debian / Ubuntu |
-| macOS | `.zip` | Intel (x64) |
-| macOS | `.zip` | Apple Silicon (arm64) |
-| macOS | `.pkg` | Intel installer |
-| macOS | `.pkg` | Apple Silicon installer |
-| Windows | `.exe` | Windows installer |
-
-> **macOS:** Builds are unsigned. Right-click → Open on first launch to bypass Gatekeeper.
-> **Windows:** SmartScreen may warn on first run — click "More info" → "Run anyway".
-HEREDOC
-          )
-
-          if [ -n "$WHATS_NEW" ]; then
-            NOTES="${WHATS_NEW}
-${DOWNLOADS}"
-          else
-            NOTES="${DOWNLOADS}"
-          fi
-
           gh release delete "$TAG" --yes 2>/dev/null || true
-          gh release create "$TAG" --title "VibeTerminal $TAG" --latest --notes "$NOTES"
+          gh release create "$TAG" --title "VibeTerminal $TAG" --latest --notes ""
           find artifacts -type f | while read f; do
             gh release upload "$TAG" "$f" --clobber
           done
