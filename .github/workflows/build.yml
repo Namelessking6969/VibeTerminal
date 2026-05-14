@@ -19,6 +19,32 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run build:mac -- --publish never
+      - name: Build PKG installers
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          chmod +x build/pkg-scripts/postinstall
+
+          mkdir -p pkg-tmp-x64
+          unzip -q "dist/VibeTerminal-${VERSION}-mac.zip" -d pkg-tmp-x64
+          pkgbuild \
+            --component "pkg-tmp-x64/VibeTerminal.app" \
+            --install-location /Applications \
+            --scripts build/pkg-scripts \
+            --identifier com.vibeterminal.app \
+            --version "${VERSION}" \
+            "dist/VibeTerminal-${VERSION}.pkg"
+          rm -rf pkg-tmp-x64
+
+          mkdir -p pkg-tmp-arm64
+          unzip -q "dist/VibeTerminal-${VERSION}-arm64-mac.zip" -d pkg-tmp-arm64
+          pkgbuild \
+            --component "pkg-tmp-arm64/VibeTerminal.app" \
+            --install-location /Applications \
+            --scripts build/pkg-scripts \
+            --identifier com.vibeterminal.app \
+            --version "${VERSION}" \
+            "dist/VibeTerminal-${VERSION}-arm64.pkg"
+          rm -rf pkg-tmp-arm64
       - uses: actions/upload-artifact@v4
         with:
           name: macos-build
