@@ -113,19 +113,22 @@ jobs:
             WHATS_NEW=$(cat .release-notes)
           fi
 
-          DOWNLOADS="## Downloads
+          DOWNLOADS=$(cat <<'HEREDOC'
+## Downloads
 
 | Platform | File | Notes |
 |----------|------|-------|
-| Linux | \`.deb\` | Debian / Ubuntu |
-| macOS | \`.zip\` | Intel (x64) |
-| macOS | \`.zip\` | Apple Silicon (arm64) |
-| macOS | \`.pkg\` | Intel installer |
-| macOS | \`.pkg\` | Apple Silicon installer |
-| Windows | \`.exe\` | Windows installer |
+| Linux | `.deb` | Debian / Ubuntu |
+| macOS | `.zip` | Intel (x64) |
+| macOS | `.zip` | Apple Silicon (arm64) |
+| macOS | `.pkg` | Intel installer |
+| macOS | `.pkg` | Apple Silicon installer |
+| Windows | `.exe` | Windows installer |
 
 > **macOS:** Builds are unsigned. Right-click → Open on first launch to bypass Gatekeeper.
-> **Windows:** SmartScreen may warn on first run — click \"More info\" → \"Run anyway\"."
+> **Windows:** SmartScreen may warn on first run — click "More info" → "Run anyway".
+HEREDOC
+          )
 
           if [ -n "$WHATS_NEW" ]; then
             NOTES="${WHATS_NEW}
