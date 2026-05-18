@@ -198,7 +198,7 @@ function checkForUpdates(): void {
 
 const SHELL =
   process.platform === 'win32'
-    ? (process.env.COMSPEC ?? 'powershell.exe')
+    ? 'powershell.exe'
     : (process.env.SHELL ?? '/bin/zsh');
 
 function createWindow(opts: WindowOptions = {}): BrowserWindow {
