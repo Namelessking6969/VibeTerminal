@@ -1,17 +1,5 @@
 ## What's New
 
-- Updated release notes
-- Fixed the build file
-- Working on fixing the Mac portion
-
-## Downloads
-
-| Platform | File | Notes |
-|----------|------|-------|
-| macOS | `.zip` | Intel (x64) |
-| macOS | `.zip` | Apple Silicon (arm64) |
-| macOS | `.pkg` | Intel installer |
-| macOS | `.pkg` | Apple Silicon installer |
-| Windows | `.exe` | NSIS installer |
-| Linux | `.deb` | Debian / Ubuntu |
+- Build Notes Fix
+- Fixing Mac install
 

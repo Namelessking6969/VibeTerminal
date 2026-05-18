@@ -9,9 +9,9 @@
     <key>CFBundleIdentifier</key>
     <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
     <key>CFBundleVersion</key>
-    <string>69</string>
+    <string>70</string>
     <key>CFBundleShortVersionString</key>
-    <string>3.0.33</string>
+    <string>3.0.34</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleExecutable</key>
