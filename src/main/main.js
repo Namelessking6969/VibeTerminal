@@ -176,6 +176,33 @@ function checkForUpdates() {
 const SHELL = process.platform === 'win32'
     ? 'powershell.exe'
     : (process.env.SHELL ?? '/bin/zsh');
+function resolveShell(preferred) {
+    const candidates = process.platform === 'win32'
+        ? [preferred]
+        : [preferred, '/bin/zsh', '/bin/bash', '/bin/sh'];
+    for (const sh of candidates) {
+        if (!sh)
+            continue;
+        try {
+            fs_1.default.accessSync(sh, fs_1.default.constants.X_OK);
+            return sh;
+        }
+        catch {
+            electron_log_1.default.warn(`Shell not executable, skipping: ${sh}`);
+        }
+    }
+    return preferred; // hand the original to pty so its error message is clear
+}
+function resolveCwd(requested) {
+    try {
+        fs_1.default.accessSync(requested, fs_1.default.constants.R_OK);
+        return requested;
+    }
+    catch {
+        electron_log_1.default.warn(`cwd not accessible (${requested}), falling back to /tmp`);
+        return '/tmp';
+    }
+}
 function createWindow(opts = {}) {
     const win = new electron_1.BrowserWindow({
         width: opts.width ?? 1200,
@@ -370,13 +397,15 @@ electron_1.ipcMain.on('install-update', () => {
 electron_1.ipcMain.handle('create-terminal', async (event, options = {}) => {
     const settings = loadSettings();
     const id = ++terminalIdCounter;
-    const resolvedShell = options.shell || (settings.shell && settings.shell.trim()) || SHELL;
-    const cwd = options.cwd ?? os_1.default.homedir();
+    const rawShell = options.shell || (settings.shell && settings.shell.trim()) || SHELL;
+    const resolvedShell = resolveShell(rawShell);
+    const cwd = resolveCwd(options.cwd ?? os_1.default.homedir());
     const senderWcId = event.sender.id;
     const env = { ...process.env };
     env.TERM = 'xterm-256color';
     env.COLORTERM = 'truecolor';
     env.TERM_PROGRAM = 'VibeTerminal';
+    electron_log_1.default.info(`Spawning terminal ${id}: shell=${resolvedShell} cwd=${cwd} platform=${process.platform}`);
     try {
         const ptyProcess = pty.spawn(resolvedShell, [], {
             name: 'xterm-256color',
@@ -404,7 +433,7 @@ electron_1.ipcMain.handle('create-terminal', async (event, options = {}) => {
         return { success: true, id };
     }
     catch (error) {
-        electron_log_1.default.error('Failed to create terminal:', error);
+        electron_log_1.default.error(`Failed to create terminal (shell=${resolvedShell} cwd=${cwd} SHELL_env=${process.env.SHELL ?? 'unset'}):`, error);
         return { success: false, error: error.message };
     }
 });

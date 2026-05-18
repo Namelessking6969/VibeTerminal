@@ -211,6 +211,34 @@ const SHELL =
     ? 'powershell.exe'
     : (process.env.SHELL ?? '/bin/zsh');
 
+function resolveShell(preferred: string): string {
+  const candidates =
+    process.platform === 'win32'
+      ? [preferred]
+      : [preferred, '/bin/zsh', '/bin/bash', '/bin/sh'];
+
+  for (const sh of candidates) {
+    if (!sh) continue;
+    try {
+      fs.accessSync(sh, fs.constants.X_OK);
+      return sh;
+    } catch {
+      log.warn(`Shell not executable, skipping: ${sh}`);
+    }
+  }
+  return preferred; // hand the original to pty so its error message is clear
+}
+
+function resolveCwd(requested: string): string {
+  try {
+    fs.accessSync(requested, fs.constants.R_OK);
+    return requested;
+  } catch {
+    log.warn(`cwd not accessible (${requested}), falling back to /tmp`);
+    return '/tmp';
+  }
+}
+
 function createWindow(opts: WindowOptions = {}): BrowserWindow {
   const win = new BrowserWindow({
     width: opts.width ?? 1200,
@@ -416,14 +444,17 @@ ipcMain.on('install-update', () => {
 ipcMain.handle('create-terminal', async (event: IpcMainInvokeEvent, options: CreateTerminalOptions = {}) => {
   const settings = loadSettings();
   const id = ++terminalIdCounter;
-  const resolvedShell = options.shell || (settings.shell && settings.shell.trim()) || SHELL;
-  const cwd = options.cwd ?? os.homedir();
+  const rawShell = options.shell || (settings.shell && settings.shell.trim()) || SHELL;
+  const resolvedShell = resolveShell(rawShell);
+  const cwd = resolveCwd(options.cwd ?? os.homedir());
   const senderWcId = event.sender.id;
 
   const env: Record<string, string> = { ...(process.env as Record<string, string>) };
   env.TERM = 'xterm-256color';
   env.COLORTERM = 'truecolor';
   env.TERM_PROGRAM = 'VibeTerminal';
+
+  log.info(`Spawning terminal ${id}: shell=${resolvedShell} cwd=${cwd} platform=${process.platform}`);
 
   try {
     const ptyProcess = pty.spawn(resolvedShell, [], {
@@ -454,7 +485,7 @@ ipcMain.handle('create-terminal', async (event: IpcMainInvokeEvent, options: Cre
     log.info(`Created terminal ${id} with shell ${resolvedShell}`);
     return { success: true, id };
   } catch (error) {
-    log.error('Failed to create terminal:', error);
+    log.error(`Failed to create terminal (shell=${resolvedShell} cwd=${cwd} SHELL_env=${process.env.SHELL ?? 'unset'}):`, error);
     return { success: false, error: (error as Error).message };
   }
 });
