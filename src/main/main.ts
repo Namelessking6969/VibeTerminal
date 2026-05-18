@@ -193,7 +193,17 @@ function checkForUpdates(): void {
     return;
   }
   const updater = initUpdater();
-  if (updater) updater.checkForUpdates();
+  if (!updater) {
+    mainWindow?.webContents.send('update-status', { message: 'Update check failed: updater could not be initialized.' });
+    return;
+  }
+  const timeout = setTimeout(() => {
+    mainWindow?.webContents.send('update-status', { message: 'Update check timed out. Check your connection.' });
+  }, 15000);
+  updater.once('update-available', () => clearTimeout(timeout));
+  updater.once('update-not-available', () => clearTimeout(timeout));
+  updater.once('error', () => clearTimeout(timeout));
+  updater.checkForUpdates();
 }
 
 const SHELL =

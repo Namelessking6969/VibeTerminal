@@ -161,11 +161,20 @@ function checkForUpdates() {
         return;
     }
     const updater = initUpdater();
-    if (updater)
-        updater.checkForUpdates();
+    if (!updater) {
+        mainWindow?.webContents.send('update-status', { message: 'Update check failed: updater could not be initialized.' });
+        return;
+    }
+    const timeout = setTimeout(() => {
+        mainWindow?.webContents.send('update-status', { message: 'Update check timed out. Check your connection.' });
+    }, 15000);
+    updater.once('update-available', () => clearTimeout(timeout));
+    updater.once('update-not-available', () => clearTimeout(timeout));
+    updater.once('error', () => clearTimeout(timeout));
+    updater.checkForUpdates();
 }
 const SHELL = process.platform === 'win32'
-    ? (process.env.COMSPEC ?? 'cmd.exe')
+    ? 'powershell.exe'
     : (process.env.SHELL ?? '/bin/zsh');
 function createWindow(opts = {}) {
     const win = new electron_1.BrowserWindow({
