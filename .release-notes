@@ -1,4 +1,10 @@
 ## What's New
 
-- Mac should be able to build now, issue with the fallback not working correctly
+- Tooltip labels swapped
+- fixed windows fallback
+- ANSI escape state machine dead code
+- executeCSI switch type error
+- deleteCharacters corrupts row length
+- scrollUp/scrollDown ignore scroll region
+- Missing TIOCSCTTY
 
