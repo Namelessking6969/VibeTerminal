@@ -1,10 +1,5 @@
 ## What's New
 
-- Tooltip labels swapped
-- fixed windows fallback
-- ANSI escape state machine dead code
-- executeCSI switch type error
-- deleteCharacters corrupts row length
-- scrollUp/scrollDown ignore scroll region
-- Missing TIOCSCTTY
+- Undocking was causing an issue where it was clearning the terminal
+- Addressed this issue
 
