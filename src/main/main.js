@@ -55,6 +55,7 @@ function getIconPath() {
 let mainWindow = null;
 const terminals = new Map();
 let terminalIdCounter = 0;
+const pendingTransfers = new Map();
 const DEFAULT_SETTINGS = {
     fontFamily: '"MesloLGS NF", monospace',
     fontSize: 13,
@@ -195,12 +196,12 @@ function resolveShell(preferred) {
 }
 function resolveCwd(requested) {
     try {
-        fs_1.default.accessSync(requested, fs_1.default.constants.R_OK);
+        fs_1.default.accessSync(requested, fs_1.default.constants.X_OK);
         return requested;
     }
     catch {
-        electron_log_1.default.warn(`cwd not accessible (${requested}), falling back to /tmp`);
-        return '/tmp';
+        electron_log_1.default.warn(`cwd not accessible (${requested}), falling back to home`);
+        return os_1.default.homedir();
     }
 }
 function createWindow(opts = {}) {
@@ -221,9 +222,12 @@ function createWindow(opts = {}) {
         },
         icon: getIconPath(),
     });
-    const loadOptions = opts.workspaceName
-        ? { hash: `ws=${encodeURIComponent(opts.workspaceName)}` }
-        : {};
+    const hashParts = [];
+    if (opts.workspaceName)
+        hashParts.push(`ws=${encodeURIComponent(opts.workspaceName)}`);
+    if (opts.transferToken)
+        hashParts.push(`transfer=${encodeURIComponent(opts.transferToken)}`);
+    const loadOptions = hashParts.length > 0 ? { hash: hashParts.join('&') } : {};
     win.loadFile(path_1.default.join(__dirname, '../renderer/index.html'), loadOptions);
     win.webContents.setWindowOpenHandler(({ url }) => {
         if (/^https?:\/\//.test(url))
@@ -415,13 +419,18 @@ electron_1.ipcMain.handle('create-terminal', async (event, options = {}) => {
             env,
         });
         ptyProcess.onData((data) => {
-            const wc = electron_1.webContents.fromId(senderWcId);
+            const entry = terminals.get(id);
+            if (!entry)
+                return;
+            const wc = electron_1.webContents.fromId(entry.webContentsId);
             if (wc && !wc.isDestroyed()) {
                 wc.send('terminal-data', { id, data });
             }
         });
         ptyProcess.onExit(({ exitCode, signal }) => {
-            const wc = electron_1.webContents.fromId(senderWcId);
+            const entry = terminals.get(id);
+            const wcId = entry?.webContentsId ?? senderWcId;
+            const wc = electron_1.webContents.fromId(wcId);
             if (wc && !wc.isDestroyed()) {
                 wc.send('terminal-exit', { id, exitCode, signal });
             }
@@ -466,9 +475,26 @@ electron_1.ipcMain.on('window-close', (event) => {
 electron_1.ipcMain.handle('window-is-maximized', (event) => {
     return electron_1.BrowserWindow.fromWebContents(event.sender)?.isMaximized() ?? false;
 });
-electron_1.ipcMain.handle('create-window', (_event, { workspaceName } = {}) => {
-    createWindow({ workspaceName, width: 900, height: 700 });
+electron_1.ipcMain.handle('create-window', (_event, { workspaceName, transferToken } = {}) => {
+    createWindow({ workspaceName, transferToken, width: 900, height: 700 });
     return {};
+});
+electron_1.ipcMain.handle('stage-transfer', (_event, { token, terminalIds, payload }) => {
+    pendingTransfers.set(token, { allTerminalIds: terminalIds, payload });
+    return { success: true };
+});
+electron_1.ipcMain.handle('claim-transfer', (event, { token }) => {
+    const transfer = pendingTransfers.get(token);
+    if (!transfer)
+        return { payload: null };
+    pendingTransfers.delete(token);
+    const newWcId = event.sender.id;
+    for (const id of transfer.allTerminalIds) {
+        const term = terminals.get(id);
+        if (term)
+            term.webContentsId = newWcId;
+    }
+    return { payload: transfer.payload };
 });
 electron_1.ipcMain.handle('get-shell-path', () => SHELL);
 electron_1.ipcMain.handle('get-platform', () => process.platform);
@@ -491,6 +517,15 @@ electron_1.ipcMain.handle('set-hotkey', (_event, { enabled, hotkey }) => {
 electron_1.ipcMain.on('open-external', (_event, url) => {
     if (/^https?:\/\//.test(url))
         electron_1.shell.openExternal(url);
+});
+electron_1.ipcMain.handle('send-feedback', async (_event, text) => {
+    const WEBHOOK_URL = 'https://discord.com/api/webhooks/1503746290821890179/BhkQyscm6qN4-3-8rTq7sb7STK2C9jD1HfqGnVyN1bkbwG2idHdLLJ0yCVToxgCDhxBz';
+    const res = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: `**VibeTerminal Feedback**\n${text}` }),
+    });
+    return res.ok;
 });
 // SSH Config
 const SSH_CONFIG_PATH = path_1.default.join(os_1.default.homedir(), '.ssh', 'config');

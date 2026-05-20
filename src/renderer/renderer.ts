@@ -98,7 +98,9 @@ declare global {
       onShowSearch(callback: () => void): void;
       onShowCommandPalette(callback: () => void): void;
       onShowSettings(callback: () => void): void;
-      openNewWindow(workspaceName?: string): Promise<void>;
+      openNewWindow(workspaceName?: string, transferToken?: string): Promise<void>;
+      stageTransfer(token: string, terminalIds: number[], payload: unknown): Promise<{ success: boolean }>;
+      claimTransfer(token: string): Promise<{ payload: unknown }>;
       minimize(): void;
       maximize(): void;
       close(): void;
@@ -326,11 +328,15 @@ class TerminalManager {
 this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     this.renderTitlebar();
     this.setupEventListeners();
-    const hash = window.location.hash;
-    const initialName = (hash && hash.startsWith('#ws='))
-      ? decodeURIComponent(hash.slice(4))
-      : 'workspace 1';
-    await this.addWorkspace(initialName);
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    const initialName = params.get('ws') ?? 'workspace 1';
+    const transferToken = params.get('transfer');
+
+    if (transferToken) {
+      await this._initFromTransfer(initialName, transferToken);
+    } else {
+      await this.addWorkspace(initialName);
+    }
   }
 
   setupEventListeners(): void {
@@ -500,8 +506,43 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
   async undockWorkspace(wsId: string): Promise<void> {
     const ws = this.workspaces.find(w => w.id === wsId);
     if (!ws) return;
-    await window.terminalAPI.openNewWindow(ws.name);
-    if (this.workspaces.length > 1) this.closeWorkspace(wsId);
+
+    const token = `${Date.now()}-${wsId}`;
+    const allTerminalIds = ws.tabs.flatMap(tab => tab.terminals.map(t => t.id));
+    const payload = {
+      tabs: ws.tabs.map(tab => ({
+        title: tab.title,
+        color: tab.color ?? null,
+        terminalIds: tab.terminals.map(t => t.id),
+        activeTerminalIndex: tab.activeTerminalIndex,
+      })),
+      activeTabIndex: ws.tabs.findIndex(t => t.id === ws.activeTabId),
+    };
+
+    await window.terminalAPI.stageTransfer(token, allTerminalIds, payload);
+    await window.terminalAPI.openNewWindow(ws.name, token);
+    if (this.workspaces.length > 1) this._closeWorkspaceNoKill(wsId);
+  }
+
+  _closeWorkspaceNoKill(id: string): void {
+    if (this.workspaces.length === 1) return;
+    const ws = this.workspaces.find(w => w.id === id);
+    if (!ws) return;
+
+    ws.tabs.forEach(tab => {
+      tab.terminals.forEach(t => this.terminals.delete(t.id));
+      if (tab.container) tab.container.remove();
+    });
+
+    const index = this.workspaces.findIndex(w => w.id === id);
+    this.workspaces.splice(index, 1);
+
+    if (this.activeWorkspaceId === id) {
+      const next = this.workspaces[Math.min(index, this.workspaces.length - 1)];
+      this.setActiveWorkspace(next.id);
+    } else {
+      this.renderWorkspaces();
+    }
   }
 
   startWorkspaceRename(id: string, nameEl: Element): void {
@@ -678,9 +719,15 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     await this._spawnTerminalInWrapper(tab, wrapper);
   }
 
-  async _spawnTerminalInWrapper(tab: Tab, wrapper: HTMLElement): Promise<void> {
-    const result = await window.terminalAPI.createTerminal({ cols: 80, rows: 24 });
-    if (!result.success) return;
+  async _spawnTerminalInWrapper(tab: Tab, wrapper: HTMLElement, existingId?: number): Promise<void> {
+    let termId: number;
+    if (existingId !== undefined) {
+      termId = existingId;
+    } else {
+      const result = await window.terminalAPI.createTerminal({ cols: 80, rows: 24 });
+      if (!result.success) return;
+      termId = result.id;
+    }
 
     const s = this.settings;
     const terminal = new Terminal({
@@ -748,8 +795,8 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
       }
     });
 
-    const terminalData: TerminalData = { id: result.id, terminal, fitAddon, searchAddon, wrapper };
-    this.terminals.set(result.id, terminalData);
+    const terminalData: TerminalData = { id: termId, terminal, fitAddon, searchAddon, wrapper };
+    this.terminals.set(termId, terminalData);
     tab.terminals.push(terminalData);
     tab.activeTerminalIndex = tab.terminals.length - 1;
 
@@ -758,10 +805,10 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
         const t = this.tabs.find(t => t.id === this.activeTabId);
         if (t) { t.terminals.forEach(tn => window.terminalAPI.write(tn.id, data)); return; }
       }
-      window.terminalAPI.write(result.id, data);
+      window.terminalAPI.write(termId, data);
     });
     terminal.onResize(({ cols, rows }) => {
-      window.terminalAPI.resize(result.id, cols, rows);
+      window.terminalAPI.resize(termId, cols, rows);
       document.getElementById('dimensions')!.textContent = `${cols}x${rows}`;
     });
 
@@ -771,6 +818,56 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     });
 
     terminal.focus();
+  }
+
+  async _initFromTransfer(name: string, token: string): Promise<void> {
+    const result = await window.terminalAPI.claimTransfer(token);
+    const payload = result?.payload as { tabs: { title: string; color: string | null; terminalIds: number[]; activeTerminalIndex: number }[]; activeTabIndex: number } | null;
+
+    if (!payload?.tabs?.length) {
+      await this.addWorkspace(name);
+      return;
+    }
+
+    const wsId = String(++this._nextId);
+    const workspace: Workspace = { id: wsId, name, tabs: [], activeTabId: null };
+    this.workspaces.push(workspace);
+    this.activeWorkspaceId = wsId;
+    this.renderWorkspaces();
+
+    let activeTabId: string | null = null;
+
+    for (let i = 0; i < payload.tabs.length; i++) {
+      const tabData = payload.tabs[i];
+      const tabId = String(++this._nextId);
+      const container = document.createElement('div');
+      container.className = 'terminal-view';
+      container.dataset.tabId = tabId;
+      document.getElementById('terminalContainer')!.appendChild(container);
+
+      const tab: Tab = {
+        id: tabId,
+        title: tabData.title,
+        color: tabData.color,
+        terminals: [],
+        activeTerminalIndex: tabData.activeTerminalIndex,
+        container,
+      };
+      workspace.tabs.push(tab);
+
+      for (const termId of tabData.terminalIds) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'terminal-wrapper';
+        container.appendChild(wrapper);
+        await this._spawnTerminalInWrapper(tab, wrapper, termId);
+      }
+
+      if (i === payload.activeTabIndex) activeTabId = tabId;
+    }
+
+    workspace.activeTabId = activeTabId ?? workspace.tabs[0]?.id ?? null;
+    this.renderTabs();
+    if (workspace.activeTabId) this.setActiveTab(workspace.activeTabId);
   }
 
   closeTab(tabId: string): void {

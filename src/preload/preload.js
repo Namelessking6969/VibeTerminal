@@ -27,7 +27,9 @@ const terminalAPI = {
     onShowSearch: (callback) => electron_1.ipcRenderer.on('show-search', callback),
     onShowCommandPalette: (callback) => electron_1.ipcRenderer.on('show-command-palette', callback),
     onShowSettings: (callback) => electron_1.ipcRenderer.on('show-settings', callback),
-    openNewWindow: (workspaceName) => electron_1.ipcRenderer.invoke('create-window', { workspaceName }),
+    openNewWindow: (workspaceName, transferToken) => electron_1.ipcRenderer.invoke('create-window', { workspaceName, transferToken }),
+    stageTransfer: (token, terminalIds, payload) => electron_1.ipcRenderer.invoke('stage-transfer', { token, terminalIds, payload }),
+    claimTransfer: (token) => electron_1.ipcRenderer.invoke('claim-transfer', { token }),
     // Window controls
     minimize: () => electron_1.ipcRenderer.send('window-minimize'),
     maximize: () => electron_1.ipcRenderer.send('window-maximize'),
@@ -64,6 +66,7 @@ const terminalAPI = {
     setHotkey: (opts) => electron_1.ipcRenderer.invoke('set-hotkey', opts),
     openExternal: (url) => electron_1.ipcRenderer.send('open-external', url),
     getAppVersion: () => electron_1.ipcRenderer.invoke('get-app-version'),
+    sendFeedback: (text) => electron_1.ipcRenderer.invoke('send-feedback', text),
 };
 electron_1.contextBridge.exposeInMainWorld('terminalAPI', terminalAPI);
 //# sourceMappingURL=preload.js.map

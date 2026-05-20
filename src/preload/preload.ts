@@ -40,8 +40,14 @@ const terminalAPI = {
   onShowCommandPalette: (callback: (event: IpcRendererEvent) => void) => ipcRenderer.on('show-command-palette', callback),
   onShowSettings: (callback: (event: IpcRendererEvent) => void) => ipcRenderer.on('show-settings', callback),
 
-  openNewWindow: (workspaceName?: string) =>
-    ipcRenderer.invoke('create-window', { workspaceName }),
+  openNewWindow: (workspaceName?: string, transferToken?: string) =>
+    ipcRenderer.invoke('create-window', { workspaceName, transferToken }),
+
+  stageTransfer: (token: string, terminalIds: number[], payload: unknown) =>
+    ipcRenderer.invoke('stage-transfer', { token, terminalIds, payload }),
+
+  claimTransfer: (token: string) =>
+    ipcRenderer.invoke('claim-transfer', { token }),
 
   // Window controls
   minimize: () => ipcRenderer.send('window-minimize'),

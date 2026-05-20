@@ -56,6 +56,12 @@ interface WindowOptions {
   width?: number;
   height?: number;
   workspaceName?: string;
+  transferToken?: string;
+}
+
+interface PendingTransfer {
+  allTerminalIds: number[];
+  payload: unknown;
 }
 
 interface CreateTerminalOptions {
@@ -86,6 +92,7 @@ function getIconPath(): string {
 let mainWindow: BrowserWindow | null = null;
 const terminals = new Map<number, TerminalEntry>();
 let terminalIdCounter = 0;
+const pendingTransfers = new Map<string, PendingTransfer>();
 
 const DEFAULT_SETTINGS: Settings = {
   fontFamily: '"MesloLGS NF", monospace',
@@ -258,9 +265,10 @@ function createWindow(opts: WindowOptions = {}): BrowserWindow {
     icon: getIconPath(),
   });
 
-  const loadOptions = opts.workspaceName
-    ? { hash: `ws=${encodeURIComponent(opts.workspaceName)}` }
-    : {};
+  const hashParts: string[] = [];
+  if (opts.workspaceName) hashParts.push(`ws=${encodeURIComponent(opts.workspaceName)}`);
+  if (opts.transferToken) hashParts.push(`transfer=${encodeURIComponent(opts.transferToken)}`);
+  const loadOptions = hashParts.length > 0 ? { hash: hashParts.join('&') } : {};
   win.loadFile(path.join(__dirname, '../renderer/index.html'), loadOptions);
 
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -466,14 +474,18 @@ ipcMain.handle('create-terminal', async (event: IpcMainInvokeEvent, options: Cre
     });
 
     ptyProcess.onData((data) => {
-      const wc = webContents.fromId(senderWcId);
+      const entry = terminals.get(id);
+      if (!entry) return;
+      const wc = webContents.fromId(entry.webContentsId);
       if (wc && !wc.isDestroyed()) {
         wc.send('terminal-data', { id, data });
       }
     });
 
     ptyProcess.onExit(({ exitCode, signal }) => {
-      const wc = webContents.fromId(senderWcId);
+      const entry = terminals.get(id);
+      const wcId = entry?.webContentsId ?? senderWcId;
+      const wc = webContents.fromId(wcId);
       if (wc && !wc.isDestroyed()) {
         wc.send('terminal-exit', { id, exitCode, signal });
       }
@@ -524,9 +536,26 @@ ipcMain.handle('window-is-maximized', (event: IpcMainInvokeEvent) => {
   return BrowserWindow.fromWebContents(event.sender)?.isMaximized() ?? false;
 });
 
-ipcMain.handle('create-window', (_event: IpcMainInvokeEvent, { workspaceName }: { workspaceName?: string } = {}) => {
-  createWindow({ workspaceName, width: 900, height: 700 });
+ipcMain.handle('create-window', (_event: IpcMainInvokeEvent, { workspaceName, transferToken }: { workspaceName?: string; transferToken?: string } = {}) => {
+  createWindow({ workspaceName, transferToken, width: 900, height: 700 });
   return {};
+});
+
+ipcMain.handle('stage-transfer', (_event: IpcMainInvokeEvent, { token, terminalIds, payload }: { token: string; terminalIds: number[]; payload: unknown }) => {
+  pendingTransfers.set(token, { allTerminalIds: terminalIds, payload });
+  return { success: true };
+});
+
+ipcMain.handle('claim-transfer', (event: IpcMainInvokeEvent, { token }: { token: string }) => {
+  const transfer = pendingTransfers.get(token);
+  if (!transfer) return { payload: null };
+  pendingTransfers.delete(token);
+  const newWcId = event.sender.id;
+  for (const id of transfer.allTerminalIds) {
+    const term = terminals.get(id);
+    if (term) term.webContentsId = newWcId;
+  }
+  return { payload: transfer.payload };
 });
 
 ipcMain.handle('get-shell-path', () => SHELL);
