@@ -17,6 +17,7 @@ interface Settings {
   opacity: number;
   hotkeyEnabled: boolean;
   hotkey: string;
+  userName: string;
 }
 
 interface SshHost {
@@ -121,7 +122,7 @@ declare global {
       setHotkey(opts: { enabled: boolean; hotkey: string }): Promise<{ success: boolean }>;
       openExternal(url: string): void;
       getAppVersion(): Promise<string>;
-      sendFeedback(text: string): Promise<boolean>;
+      sendFeedback(text: string, name?: string): Promise<boolean>;
     };
     terminalManager: TerminalManager;
   }
@@ -259,6 +260,7 @@ const DEFAULT_SETTINGS: Settings = {
   opacity: 1.0,
   hotkeyEnabled: false,
   hotkey: 'CommandOrControl+`',
+  userName: '',
 };
 
 const TAB_COLORS: (string | null)[] = [
@@ -1494,11 +1496,13 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     const text = textarea.value.trim();
     if (!text) { statusEl.textContent = 'Please write something first.'; return; }
 
+    const name = this.settings.userName || '';
+
     sendBtn.disabled = true;
     statusEl.textContent = 'Sending...';
 
     try {
-      const ok = await window.terminalAPI.sendFeedback(text);
+      const ok = await window.terminalAPI.sendFeedback(text, name);
       if (ok) {
         textarea.value = '';
         statusEl.textContent = 'Sent! Thanks for the feedback.';
@@ -1628,6 +1632,8 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     (document.getElementById('hotkeyRow') as HTMLElement).style.display = hotkeyEnabled ? 'flex' : 'none';
     (document.getElementById('hotkeyHint') as HTMLElement).style.display = hotkeyEnabled ? 'block' : 'none';
 
+    (document.getElementById('settingsUserName') as HTMLInputElement).value = s.userName || '';
+
     window.terminalAPI.getAppVersion().then(v => {
       document.getElementById('aboutVersion')!.textContent = `v${v}`;
     });
@@ -1662,6 +1668,7 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
       opacity,
       hotkeyEnabled,
       hotkey,
+      userName: (document.getElementById('settingsUserName') as HTMLInputElement).value.trim(),
     };
 
     const result = await window.terminalAPI.saveSettings(newSettings);

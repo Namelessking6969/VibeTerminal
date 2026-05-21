@@ -66,7 +66,7 @@ const terminalAPI = {
     setHotkey: (opts) => electron_1.ipcRenderer.invoke('set-hotkey', opts),
     openExternal: (url) => electron_1.ipcRenderer.send('open-external', url),
     getAppVersion: () => electron_1.ipcRenderer.invoke('get-app-version'),
-    sendFeedback: (text) => electron_1.ipcRenderer.invoke('send-feedback', text),
+    sendFeedback: (text, name) => electron_1.ipcRenderer.invoke('send-feedback', text, name),
 };
 electron_1.contextBridge.exposeInMainWorld('terminalAPI', terminalAPI);
 //# sourceMappingURL=preload.js.map

@@ -578,12 +578,13 @@ ipcMain.on('open-external', (_event: IpcMainEvent, url: string) => {
   if (/^https?:\/\//.test(url)) shell.openExternal(url);
 });
 
-ipcMain.handle('send-feedback', async (_event: IpcMainInvokeEvent, text: string) => {
+ipcMain.handle('send-feedback', async (_event: IpcMainInvokeEvent, text: string, name?: string) => {
   const WEBHOOK_URL = 'https://discord.com/api/webhooks/1503746290821890179/BhkQyscm6qN4-3-8rTq7sb7STK2C9jD1HfqGnVyN1bkbwG2idHdLLJ0yCVToxgCDhxBz';
+  const from = name?.trim() || 'Anonymous';
   const res = await fetch(WEBHOOK_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content: `**VibeTerminal Feedback**\n${text}` }),
+    body: JSON.stringify({ content: `**VibeTerminal Feedback** — from **${from}**\n${text}` }),
   });
   return res.ok;
 });

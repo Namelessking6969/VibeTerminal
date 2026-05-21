@@ -95,7 +95,7 @@ const terminalAPI = {
 
   openExternal: (url: string) => ipcRenderer.send('open-external', url),
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
-  sendFeedback: (text: string) => ipcRenderer.invoke('send-feedback', text),
+  sendFeedback: (text: string, name?: string) => ipcRenderer.invoke('send-feedback', text, name),
 };
 
 contextBridge.exposeInMainWorld('terminalAPI', terminalAPI);
