@@ -1496,7 +1496,8 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     const text = textarea.value.trim();
     if (!text) { statusEl.textContent = 'Please write something first.'; return; }
 
-    const name = this.settings.userName || '';
+    const nameInput = document.getElementById('feedbackName') as HTMLInputElement;
+    const name = nameInput.value.trim();
 
     sendBtn.disabled = true;
     statusEl.textContent = 'Sending...';
@@ -1505,6 +1506,7 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
       const ok = await window.terminalAPI.sendFeedback(text, name);
       if (ok) {
         textarea.value = '';
+        nameInput.value = '';
         statusEl.textContent = 'Sent! Thanks for the feedback.';
       } else {
         statusEl.textContent = 'Failed to send. Try again.';
@@ -1632,8 +1634,6 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     (document.getElementById('hotkeyRow') as HTMLElement).style.display = hotkeyEnabled ? 'flex' : 'none';
     (document.getElementById('hotkeyHint') as HTMLElement).style.display = hotkeyEnabled ? 'block' : 'none';
 
-    (document.getElementById('settingsUserName') as HTMLInputElement).value = s.userName || '';
-
     window.terminalAPI.getAppVersion().then(v => {
       document.getElementById('aboutVersion')!.textContent = `v${v}`;
     });
@@ -1668,7 +1668,7 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
       opacity,
       hotkeyEnabled,
       hotkey,
-      userName: (document.getElementById('settingsUserName') as HTMLInputElement).value.trim(),
+      userName: '',
     };
 
     const result = await window.terminalAPI.saveSettings(newSettings);
