@@ -37,6 +37,8 @@ interface Settings {
   opacity: number;
   hotkeyEnabled: boolean;
   hotkey: string;
+  userName: string;
+  keybindings: Record<string, string>;
 }
 
 interface TerminalEntry {
@@ -106,6 +108,8 @@ const DEFAULT_SETTINGS: Settings = {
   opacity: 1.0,
   hotkeyEnabled: false,
   hotkey: 'CommandOrControl+`',
+  userName: '',
+  keybindings: {},
 };
 
 function getSettingsPath(): string {

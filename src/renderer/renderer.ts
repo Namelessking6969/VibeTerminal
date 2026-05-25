@@ -1672,7 +1672,8 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
       opacity,
       hotkeyEnabled,
       hotkey,
-      userName: '',
+      userName: this.settings.userName,
+      keybindings: this.settings.keybindings,
     };
 
     const result = await window.terminalAPI.saveSettings(newSettings);
@@ -1734,7 +1735,8 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
   private getEffectiveKey(id: string): string {
     return this._pendingKeybindings[id]
       ?? this.settings.keybindings?.[id]
-      ?? this.commands.find(c => c.id === id)!.defaultKey;
+      ?? this.commands.find(c => c.id === id)?.defaultKey
+      ?? '';
   }
 
   applySettingsToAllTerminals(): void {
