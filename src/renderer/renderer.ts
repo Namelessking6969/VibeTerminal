@@ -1739,6 +1739,54 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
       ?? '';
   }
 
+  renderKeybindingsTable(): void {
+    const container = document.getElementById('kbTableContainer')!;
+    container.innerHTML = '';
+
+    this.commands.forEach(cmd => {
+      const effectiveKey = this.getEffectiveKey(cmd.id);
+      const isOverridden = !!(this._pendingKeybindings[cmd.id] ?? this.settings.keybindings?.[cmd.id]);
+
+      const wrapper = document.createElement('div');
+
+      const row = document.createElement('div');
+      row.className = 'kb-row';
+      row.dataset.id = cmd.id;
+
+      const action = document.createElement('span');
+      action.className = 'kb-action';
+      action.textContent = cmd.title;
+
+      const conflictEl = document.createElement('div');
+      conflictEl.className = 'kb-conflict';
+
+      const chip = document.createElement('button');
+      chip.className = 'kb-shortcut-chip';
+      chip.textContent = this.keyToDisplay(effectiveKey);
+      chip.onclick = () => this.startKeybindCapture(cmd.id, chip, conflictEl);
+
+      const resetBtn = document.createElement('button');
+      resetBtn.className = 'kb-reset-btn' + (isOverridden ? ' active' : '');
+      resetBtn.title = 'Reset to default';
+      resetBtn.textContent = '↺';
+      resetBtn.onclick = () => {
+        delete this._pendingKeybindings[cmd.id];
+        this.renderKeybindingsTable();
+      };
+
+      row.appendChild(action);
+      row.appendChild(chip);
+      row.appendChild(resetBtn);
+      wrapper.appendChild(row);
+      wrapper.appendChild(conflictEl);
+      container.appendChild(wrapper);
+    });
+  }
+
+  private startKeybindCapture(_id: string, _chip: HTMLButtonElement, _conflictEl: HTMLDivElement): void {
+    // implemented in full in the next step
+  }
+
   applySettingsToAllTerminals(): void {
     const s = this.settings;
     const op = s.opacity ?? 1.0;
