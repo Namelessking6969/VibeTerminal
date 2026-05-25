@@ -1783,8 +1783,54 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     });
   }
 
-  private startKeybindCapture(_id: string, _chip: HTMLButtonElement, _conflictEl: HTMLDivElement): void {
-    // implemented in full in the next step
+  private startKeybindCapture(id: string, chip: HTMLButtonElement, conflictEl: HTMLDivElement): void {
+    if (document.querySelector('.kb-shortcut-chip.capturing')) return;
+
+    chip.classList.add('capturing');
+    chip.textContent = 'Press keys…';
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (e.code === 'Escape') {
+        cancel();
+        return;
+      }
+
+      if (!e.ctrlKey && !e.metaKey && !e.altKey) return;
+
+      const modCodes = ['ControlLeft','ControlRight','ShiftLeft','ShiftRight','MetaLeft','MetaRight','AltLeft','AltRight'];
+      if (modCodes.includes(e.code)) return;
+
+      const newKey = this.eventToKey(e);
+      document.removeEventListener('keydown', onKeyDown, true);
+
+      const conflict = this.commands.find(cmd => cmd.id !== id && this.getEffectiveKey(cmd.id) === newKey);
+
+      this._pendingKeybindings[id] = newKey;
+      chip.classList.remove('capturing');
+      chip.textContent = this.keyToDisplay(newKey);
+
+      const row = chip.closest('.kb-row') as HTMLElement;
+      row?.querySelector('.kb-reset-btn')?.classList.add('active');
+
+      if (conflict) {
+        conflictEl.textContent = `Already used by "${conflict.title}"`;
+        conflictEl.classList.add('visible');
+      } else {
+        conflictEl.classList.remove('visible');
+        conflictEl.textContent = '';
+      }
+    };
+
+    const cancel = () => {
+      chip.classList.remove('capturing');
+      chip.textContent = this.keyToDisplay(this.getEffectiveKey(id));
+      document.removeEventListener('keydown', onKeyDown, true);
+    };
+
+    document.addEventListener('keydown', onKeyDown, true);
   }
 
   applySettingsToAllTerminals(): void {
