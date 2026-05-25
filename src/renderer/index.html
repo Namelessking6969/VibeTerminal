@@ -871,6 +871,7 @@
       <!-- Tab Nav -->
       <div class="settings-tabs">
         <button class="settings-tab-btn active" onclick="switchSettingsTab('appearance', this)">Appearance</button>
+        <button class="settings-tab-btn" onclick="switchSettingsTab('keybindings', this)">Keybindings</button>
         <button class="settings-tab-btn" onclick="switchSettingsTab('about', this)">About</button>
       </div>
 
@@ -962,6 +963,12 @@
           </div>
           <div class="settings-hint" id="hotkeyHint" style="display:none">Summons the terminal from any app. Requires restart to take effect if changed.</div>
 
+        </div>
+
+        <!-- Keybindings tab -->
+        <div class="settings-tab-panel" id="stab-keybindings">
+          <div class="settings-section-title">Keybindings</div>
+          <div id="kbTableContainer"></div>
         </div>
 
         <!-- About tab: Feedback + Updates + About -->
