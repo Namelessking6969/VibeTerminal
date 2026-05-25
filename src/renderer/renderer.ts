@@ -18,6 +18,7 @@ interface Settings {
   hotkeyEnabled: boolean;
   hotkey: string;
   userName: string;
+  keybindings: Record<string, string>;
 }
 
 interface SshHost {
@@ -63,6 +64,7 @@ interface Command {
   id: string;
   title: string;
   shortcut: string;
+  defaultKey: string;
   action: () => void;
 }
 
@@ -261,6 +263,7 @@ const DEFAULT_SETTINGS: Settings = {
   hotkeyEnabled: false,
   hotkey: 'CommandOrControl+`',
   userName: '',
+  keybindings: {},
 };
 
 const TAB_COLORS: (string | null)[] = [
@@ -281,24 +284,25 @@ class TerminalManager {
   _nextId = 0;
   pasteHistory: string[] = [];
   broadcastInput = false;
+  _pendingKeybindings: Record<string, string> = {};
   commands: Command[];
 
   constructor() {
     this.commands = [
-      { id: 'newTab',        title: 'New Tab',              shortcut: '⌘T',   action: () => this.addTab() },
-      { id: 'closeTab',      title: 'Close Tab',            shortcut: '⌘W',   action: () => this.closeActiveTab() },
-      { id: 'splitH',        title: 'Split Horizontally',   shortcut: '⌘D',   action: () => this.splitActivePane('horizontal') },
-      { id: 'splitV',        title: 'Split Vertically',     shortcut: '⌘⇧D',  action: () => this.splitActivePane('vertical') },
-      { id: 'nextTab',       title: 'Next Tab',             shortcut: '⌘⇧]',  action: () => this.nextTab() },
-      { id: 'prevTab',       title: 'Previous Tab',         shortcut: '⌘⇧[',  action: () => this.prevTab() },
-      { id: 'newWorkspace',  title: 'New Workspace',        shortcut: '⌘⇧N',  action: () => this.addWorkspace() },
-      { id: 'nextWorkspace', title: 'Next Workspace',       shortcut: '⌘⇧.',  action: () => this.nextWorkspace() },
-      { id: 'prevWorkspace', title: 'Previous Workspace',   shortcut: '⌘⇧,',  action: () => this.prevWorkspace() },
-      { id: 'clear',         title: 'Clear Terminal',       shortcut: '⌘K',   action: () => this.clearActiveTerminal() },
-      { id: 'search',        title: 'Search...',            shortcut: '⌘F',   action: () => this.showSearch() },
-      { id: 'settings',      title: 'Settings',             shortcut: '⌘,',   action: () => this.showSettings() },
-      { id: 'pasteHistory',  title: 'Paste History',        shortcut: '⌃⇧H',  action: () => this.showPasteHistory() },
-      { id: 'broadcast',     title: 'Toggle Broadcast Input', shortcut: '⌃⇧B', action: () => this.toggleBroadcast() },
+      { id: 'newTab',        title: 'New Tab',                shortcut: '⌘T',   defaultKey: 'CmdOrCtrl+KeyT',               action: () => this.addTab() },
+      { id: 'closeTab',      title: 'Close Tab',              shortcut: '⌘W',   defaultKey: 'CmdOrCtrl+KeyW',               action: () => this.closeActiveTab() },
+      { id: 'splitH',        title: 'Split Horizontally',     shortcut: '⌘D',   defaultKey: 'CmdOrCtrl+KeyD',               action: () => this.splitActivePane('horizontal') },
+      { id: 'splitV',        title: 'Split Vertically',       shortcut: '⌘⇧D',  defaultKey: 'CmdOrCtrl+Shift+KeyD',         action: () => this.splitActivePane('vertical') },
+      { id: 'nextTab',       title: 'Next Tab',               shortcut: '⌘⇧]',  defaultKey: 'CmdOrCtrl+Shift+BracketRight', action: () => this.nextTab() },
+      { id: 'prevTab',       title: 'Previous Tab',           shortcut: '⌘⇧[',  defaultKey: 'CmdOrCtrl+Shift+BracketLeft',  action: () => this.prevTab() },
+      { id: 'newWorkspace',  title: 'New Workspace',          shortcut: '⌘⇧N',  defaultKey: 'CmdOrCtrl+Shift+KeyN',         action: () => this.addWorkspace() },
+      { id: 'nextWorkspace', title: 'Next Workspace',         shortcut: '⌘⇧.',  defaultKey: 'CmdOrCtrl+Shift+Period',        action: () => this.nextWorkspace() },
+      { id: 'prevWorkspace', title: 'Previous Workspace',     shortcut: '⌘⇧,',  defaultKey: 'CmdOrCtrl+Shift+Comma',        action: () => this.prevWorkspace() },
+      { id: 'clear',         title: 'Clear Terminal',         shortcut: '⌘K',   defaultKey: 'CmdOrCtrl+KeyK',               action: () => this.clearActiveTerminal() },
+      { id: 'search',        title: 'Search...',              shortcut: '⌘F',   defaultKey: 'CmdOrCtrl+KeyF',               action: () => this.showSearch() },
+      { id: 'settings',      title: 'Settings',               shortcut: '⌘,',   defaultKey: 'CmdOrCtrl+Comma',              action: () => this.showSettings() },
+      { id: 'pasteHistory',  title: 'Paste History',          shortcut: '⌃⇧H',  defaultKey: 'Ctrl+Shift+KeyH',              action: () => this.showPasteHistory() },
+      { id: 'broadcast',     title: 'Toggle Broadcast Input', shortcut: '⌃⇧B',  defaultKey: 'Ctrl+Shift+KeyB',              action: () => this.toggleBroadcast() },
     ];
     this.init();
   }
@@ -1689,6 +1693,48 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
       this._applyXtermTheme(terminal, xtermTheme, fitAddon);
     });
     document.getElementById('settingsOverlay')!.classList.remove('visible');
+  }
+
+  private eventToKey(e: KeyboardEvent): string {
+    const parts: string[] = [];
+    const isMac = this.platform === 'darwin';
+    if (isMac ? e.metaKey : e.ctrlKey) parts.push('CmdOrCtrl');
+    else if (e.ctrlKey) parts.push('Ctrl');
+    if (e.shiftKey) parts.push('Shift');
+    if (e.altKey) parts.push('Alt');
+    const modCodes = ['ControlLeft','ControlRight','ShiftLeft','ShiftRight','MetaLeft','MetaRight','AltLeft','AltRight'];
+    if (!modCodes.includes(e.code)) parts.push(e.code);
+    return parts.join('+');
+  }
+
+  private keyToDisplay(key: string): string {
+    const isMac = this.platform === 'darwin';
+    const codeToChar: Record<string, string> = {
+      KeyA:'A', KeyB:'B', KeyC:'C', KeyD:'D', KeyE:'E', KeyF:'F', KeyG:'G', KeyH:'H',
+      KeyI:'I', KeyJ:'J', KeyK:'K', KeyL:'L', KeyM:'M', KeyN:'N', KeyO:'O', KeyP:'P',
+      KeyQ:'Q', KeyR:'R', KeyS:'S', KeyT:'T', KeyU:'U', KeyV:'V', KeyW:'W', KeyX:'X',
+      KeyY:'Y', KeyZ:'Z', Digit0:'0', Digit1:'1', Digit2:'2', Digit3:'3', Digit4:'4',
+      Digit5:'5', Digit6:'6', Digit7:'7', Digit8:'8', Digit9:'9',
+      Comma:',', Period:'.', Slash:'/', Backquote:'`', Minus:'-', Equal:'=',
+      BracketLeft:'[', BracketRight:']', Backslash:'\\', Semicolon:';', Quote:"'",
+      Space:'Space', Enter:'Enter', Backspace:'⌫', Delete:'⌦', Tab:'Tab',
+      ArrowUp:'↑', ArrowDown:'↓', ArrowLeft:'←', ArrowRight:'→',
+      F1:'F1', F2:'F2', F3:'F3', F4:'F4', F5:'F5', F6:'F6',
+      F7:'F7', F8:'F8', F9:'F9', F10:'F10', F11:'F11', F12:'F12',
+    };
+    return key.split('+').map(p => {
+      if (p === 'CmdOrCtrl') return isMac ? '⌘' : '⌃';
+      if (p === 'Ctrl') return '⌃';
+      if (p === 'Shift') return '⇧';
+      if (p === 'Alt') return isMac ? '⌥' : '⎇';
+      return codeToChar[p] ?? p;
+    }).join('');
+  }
+
+  private getEffectiveKey(id: string): string {
+    return this._pendingKeybindings[id]
+      ?? this.settings.keybindings?.[id]
+      ?? this.commands.find(c => c.id === id)!.defaultKey;
   }
 
   applySettingsToAllTerminals(): void {
