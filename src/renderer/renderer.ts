@@ -301,8 +301,9 @@ class TerminalManager {
       { id: 'clear',         title: 'Clear Terminal',         shortcut: '⌘K',   defaultKey: 'CmdOrCtrl+KeyK',               action: () => this.clearActiveTerminal() },
       { id: 'search',        title: 'Search...',              shortcut: '⌘F',   defaultKey: 'CmdOrCtrl+KeyF',               action: () => this.showSearch() },
       { id: 'settings',      title: 'Settings',               shortcut: '⌘,',   defaultKey: 'CmdOrCtrl+Comma',              action: () => this.showSettings() },
-      { id: 'pasteHistory',  title: 'Paste History',          shortcut: '⌃⇧H',  defaultKey: 'Ctrl+Shift+KeyH',              action: () => this.showPasteHistory() },
-      { id: 'broadcast',     title: 'Toggle Broadcast Input', shortcut: '⌃⇧B',  defaultKey: 'Ctrl+Shift+KeyB',              action: () => this.toggleBroadcast() },
+      { id: 'commandPalette', title: 'Command Palette',       shortcut: '⌘⇧P',  defaultKey: 'CmdOrCtrl+Shift+KeyP',         action: () => this.showCommandPalette() },
+      { id: 'pasteHistory',  title: 'Paste History',          shortcut: '⌃⇧H',  defaultKey: 'CmdOrCtrl+Shift+KeyH',         action: () => this.showPasteHistory() },
+      { id: 'broadcast',     title: 'Toggle Broadcast Input', shortcut: '⌃⇧B',  defaultKey: 'CmdOrCtrl+Shift+KeyB',         action: () => this.toggleBroadcast() },
     ];
     this.init();
   }
@@ -1542,7 +1543,7 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     list.innerHTML = filtered.map(cmd => `
       <div class="command-item" onclick="terminalManager.executeCommand('${cmd.id}')">
         <span class="command-item-title">${cmd.title}</span>
-        <span class="command-item-shortcut">${cmd.shortcut}</span>
+        <span class="command-item-shortcut">${this.keyToDisplay(this.getEffectiveKey(cmd.id))}</span>
       </div>
     `).join('');
   }
@@ -1788,6 +1789,7 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
       e.stopPropagation();
 
       if (e.code === 'Escape') {
+        e.stopPropagation();
         cancel();
         return;
       }

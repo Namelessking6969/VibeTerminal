@@ -329,6 +329,7 @@ function createMenu(): void {
         { type: 'separator' },
         {
           label: 'New Window',
+          accelerator: 'CmdOrCtrl+N',
           click: () => createWindow(),
         },
         { type: 'separator' },
