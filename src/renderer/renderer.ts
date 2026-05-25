@@ -417,24 +417,15 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
       if (e.key === 'Escape') this.hideOverlays();
     });
 
-    // Capture-phase handler so shortcuts fire even when xterm has keyboard focus.
-    // On Linux/Wayland, Electron menu accelerators don't reliably reach the renderer
-    // when a canvas-based element (xterm) has focus, so we intercept here instead.
+    // Capture-phase handler — fires before xterm sees the event on all platforms.
     document.addEventListener('keydown', (e) => {
-      const mod = e.ctrlKey || e.metaKey;
-      if (!mod) return;
-      if (e.shiftKey && e.code === 'KeyD') {
-        e.preventDefault(); e.stopPropagation();
-        this.splitActivePane('vertical');
-      }
-      if (e.shiftKey && e.code === 'KeyH') {
-        e.preventDefault(); e.stopPropagation();
-        this.showPasteHistory();
-      }
-      if (e.shiftKey && e.code === 'KeyB') {
-        e.preventDefault(); e.stopPropagation();
-        this.toggleBroadcast();
-      }
+      if (document.querySelector('.kb-shortcut-chip.capturing')) return;
+      const pressed = this.eventToKey(e);
+      const cmd = this.commands.find(c => this.getEffectiveKey(c.id) === pressed);
+      if (!cmd) return;
+      e.preventDefault();
+      e.stopPropagation();
+      cmd.action();
     }, true);
 
     // Single global resize handler fits all terminals — avoids per-terminal listener accumulation
