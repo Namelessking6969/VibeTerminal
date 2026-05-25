@@ -320,18 +320,15 @@ function createMenu(): void {
       submenu: [
         {
           label: 'New Tab',
-          accelerator: 'CmdOrCtrl+T',
           click: () => getFocusedWindow()?.webContents.send('new-tab'),
         },
         {
           label: 'Close Tab',
-          accelerator: 'CmdOrCtrl+W',
           click: () => getFocusedWindow()?.webContents.send('close-tab'),
         },
         { type: 'separator' },
         {
           label: 'New Window',
-          accelerator: 'CmdOrCtrl+N',
           click: () => createWindow(),
         },
         { type: 'separator' },
@@ -350,7 +347,6 @@ function createMenu(): void {
         { type: 'separator' },
         {
           label: 'Clear Terminal',
-          accelerator: 'CmdOrCtrl+K',
           click: () => getFocusedWindow()?.webContents.send('clear-terminal'),
         },
       ],
@@ -360,40 +356,33 @@ function createMenu(): void {
       submenu: [
         {
           label: 'Split Horizontally',
-          accelerator: 'CmdOrCtrl+D',
           click: () => getFocusedWindow()?.webContents.send('split-horizontal'),
         },
         {
           label: 'Split Vertically',
-          accelerator: 'CmdOrCtrl+Shift+D',
           click: () => getFocusedWindow()?.webContents.send('split-vertical'),
         },
         { type: 'separator' },
         {
           label: 'Next Tab',
-          accelerator: 'CmdOrCtrl+Shift+]',
           click: () => getFocusedWindow()?.webContents.send('next-tab'),
         },
         {
           label: 'Previous Tab',
-          accelerator: 'CmdOrCtrl+Shift+[',
           click: () => getFocusedWindow()?.webContents.send('prev-tab'),
         },
         { type: 'separator' },
         {
           label: 'Search',
-          accelerator: 'CmdOrCtrl+F',
           click: () => getFocusedWindow()?.webContents.send('show-search'),
         },
         {
           label: 'Command Palette',
-          accelerator: 'CmdOrCtrl+Shift+P',
           click: () => getFocusedWindow()?.webContents.send('show-command-palette'),
         },
         { type: 'separator' },
         {
           label: 'Settings',
-          accelerator: 'CmdOrCtrl+,',
           click: () => getFocusedWindow()?.webContents.send('show-settings'),
         },
         { type: 'separator' },
