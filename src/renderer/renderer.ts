@@ -1642,6 +1642,8 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
       document.getElementById('aboutVersion')!.textContent = `v${v}`;
     });
 
+    this._pendingKeybindings = { ...(this.settings.keybindings ?? {}) };
+    this.renderKeybindingsTable();
     document.getElementById('settingsOverlay')!.classList.add('visible');
   }
 
@@ -1673,7 +1675,7 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
       hotkeyEnabled,
       hotkey,
       userName: this.settings.userName,
-      keybindings: this.settings.keybindings,
+      keybindings: { ...this._pendingKeybindings },
     };
 
     const result = await window.terminalAPI.saveSettings(newSettings);
@@ -1686,6 +1688,7 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
   }
 
   hideSettings(): void {
+    this._pendingKeybindings = {};
     const key = this.settings.theme || 'vibe';
     const op = this.settings.opacity ?? 1.0;
     this.applyTheme(key, op);
