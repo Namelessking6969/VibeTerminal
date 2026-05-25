@@ -519,6 +519,31 @@
     }
     .settings-btn-save:hover { opacity: 0.88; }
 
+    /* ─── Keybindings ────────────────────────────────────────────────────── */
+    .kb-row { display: flex; align-items: center; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05); gap: 10px; }
+    .kb-row:last-child { border-bottom: none; }
+    .kb-action { flex: 1; font-size: 13px; color: var(--fg-dim); }
+    .kb-shortcut-chip {
+      min-width: 90px; padding: 3px 10px; border-radius: 4px; font-size: 12px;
+      font-family: monospace; cursor: pointer; text-align: center;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      color: var(--fg); transition: border-color 0.15s; user-select: none;
+    }
+    .kb-shortcut-chip:hover { border-color: rgba(255,255,255,0.25); }
+    .kb-shortcut-chip.capturing {
+      border-color: var(--accent); color: var(--accent); background: rgba(0,255,136,0.07);
+    }
+    .kb-reset-btn {
+      background: none; border: none; cursor: pointer; font-size: 14px;
+      color: var(--fg-dim); opacity: 0; padding: 2px 4px; border-radius: 3px;
+      transition: opacity 0.15s, color 0.15s;
+    }
+    .kb-row:hover .kb-reset-btn { opacity: 0.5; }
+    .kb-reset-btn.active { opacity: 0.7 !important; }
+    .kb-reset-btn:hover { opacity: 1 !important; color: var(--accent); }
+    .kb-conflict { font-size: 11px; color: #FF6B6B; padding: 2px 0 4px 0; display: none; }
+    .kb-conflict.visible { display: block; }
+
     /* ─── About ─────────────────────────────────────────────────────────── */
     .about-app-name { font-size: 15px; font-weight: 600; color: var(--fg); margin-bottom: 2px; }
     .about-version  { font-size: 12px; color: var(--fg-dim); opacity: 0.7; margin-bottom: 12px; }
