@@ -574,7 +574,7 @@ ipcMain.on('open-external', (_event: IpcMainEvent, url: string) => {
 
 ipcMain.handle('send-feedback', async (_event: IpcMainInvokeEvent, text: string, name?: string) => {
   const PROXY_URL = 'https://discord-webhook-proxy.vibeterm.workers.dev/report';
-  const PROXY_KEY = 'cfut_Ehlnq3cQDdvzIGcZTqhTGlzqb0pFDyjLbgWqTpNoa5521666';
+  const PROXY_KEY = 'fuckitall';
   const from = name?.trim() || 'Anonymous';
   const res = await fetch(PROXY_URL, {
     method: 'POST',

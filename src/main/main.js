@@ -512,7 +512,7 @@ electron_1.ipcMain.on('open-external', (_event, url) => {
 });
 electron_1.ipcMain.handle('send-feedback', async (_event, text, name) => {
     const PROXY_URL = 'https://discord-webhook-proxy.vibeterm.workers.dev/report';
-    const PROXY_KEY = 'cfut_Ehlnq3cQDdvzIGcZTqhTGlzqb0pFDyjLbgWqTpNoa5521666';
+    const PROXY_KEY = 'fuckitall';
     const from = name?.trim() || 'Anonymous';
     const res = await fetch(PROXY_URL, {
         method: 'POST',
