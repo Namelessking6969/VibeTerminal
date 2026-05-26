@@ -54,3 +54,45 @@ describe('method handling', () => {
     expect(res.status).toBe(405);
   });
 });
+
+describe('Discord forwarding', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  it('forwards the request body to Discord and returns 204 on success', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(
+      makeRequest({ 'X-Secret-Key': VALID_ENV.SECRET_KEY }),
+      VALID_ENV,
+      ctx,
+    );
+    await waitOnExecutionContext(ctx);
+
+    expect(res.status).toBe(204);
+    expect(fetch).toHaveBeenCalledWith(
+      VALID_ENV.DISCORD_WEBHOOK_URL,
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ content: 'test bug report' }),
+      }),
+    );
+  });
+
+  it('returns 502 when Discord responds with an error', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response('Bad request', { status: 400 }));
+
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(
+      makeRequest({ 'X-Secret-Key': VALID_ENV.SECRET_KEY }),
+      VALID_ENV,
+      ctx,
+    );
+    await waitOnExecutionContext(ctx);
+
+    expect(res.status).toBe(502);
+  });
+});
