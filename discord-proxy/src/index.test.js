@@ -30,3 +30,27 @@ describe('secret key validation', () => {
     expect(res.status).toBe(403);
   });
 });
+
+describe('method handling', () => {
+  it('returns 204 for OPTIONS without requiring auth', async () => {
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(
+      new Request('http://localhost/report', { method: 'OPTIONS' }),
+      VALID_ENV,
+      ctx,
+    );
+    await waitOnExecutionContext(ctx);
+    expect(res.status).toBe(204);
+  });
+
+  it('returns 405 for GET requests', async () => {
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(
+      new Request('http://localhost/report', { method: 'GET' }),
+      VALID_ENV,
+      ctx,
+    );
+    await waitOnExecutionContext(ctx);
+    expect(res.status).toBe(405);
+  });
+});
