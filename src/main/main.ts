@@ -573,11 +573,12 @@ ipcMain.on('open-external', (_event: IpcMainEvent, url: string) => {
 });
 
 ipcMain.handle('send-feedback', async (_event: IpcMainInvokeEvent, text: string, name?: string) => {
-  const WEBHOOK_URL = 'https://discord.com/api/webhooks/1503746290821890179/BhkQyscm6qN4-3-8rTq7sb7STK2C9jD1HfqGnVyN1bkbwG2idHdLLJ0yCVToxgCDhxBz';
+  const PROXY_URL = 'https://discord-webhook-proxy.vibeterm.workers.dev/report';
+  const PROXY_KEY = 'cfut_Ehlnq3cQDdvzIGcZTqhTGlzqb0pFDyjLbgWqTpNoa5521666';
   const from = name?.trim() || 'Anonymous';
-  const res = await fetch(WEBHOOK_URL, {
+  const res = await fetch(PROXY_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Secret-Key': PROXY_KEY },
     body: JSON.stringify({ content: `**VibeTerminal Feedback** — from **${from}**\n${text}` }),
   });
   return res.ok;
