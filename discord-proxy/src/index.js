@@ -20,11 +20,16 @@ export default {
       return new Response('Bad Request', { status: 400 });
     }
 
-    const discordRes = await fetch(env.DISCORD_WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-    });
+    let discordRes;
+    try {
+      discordRes = await fetch(env.DISCORD_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      });
+    } catch {
+      return new Response('Bad Gateway', { status: 502 });
+    }
 
     if (!discordRes.ok) {
       return new Response('Bad Gateway', { status: 502 });

@@ -1,5 +1,5 @@
 import { createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import worker from './index.js';
 
 const VALID_ENV = {
@@ -60,6 +60,10 @@ describe('Discord forwarding', () => {
     vi.stubGlobal('fetch', vi.fn());
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('forwards the request body to Discord and returns 204 on success', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 204 }));
 
@@ -84,6 +88,20 @@ describe('Discord forwarding', () => {
 
   it('returns 502 when Discord responds with an error', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(new Response('Bad request', { status: 400 }));
+
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(
+      makeRequest({ 'X-Secret-Key': VALID_ENV.SECRET_KEY }),
+      VALID_ENV,
+      ctx,
+    );
+    await waitOnExecutionContext(ctx);
+
+    expect(res.status).toBe(502);
+  });
+
+  it('returns 502 when Discord fetch throws a network error', async () => {
+    vi.mocked(fetch).mockRejectedValueOnce(new Error('Network error'));
 
     const ctx = createExecutionContext();
     const res = await worker.fetch(
