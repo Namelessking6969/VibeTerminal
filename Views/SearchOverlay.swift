@@ -69,34 +69,29 @@ struct SearchOverlayView: View {
         
         for (y, row) in screen.enumerated() {
             let line = String(row.map { $0.character })
-            for (x, cell) in row.enumerated() {
-                
-                var searchIn = line
-                var searchFor = searchText
-                
-                if useRegex {
-                    do {
-                        let options: NSRegularExpression.Options = caseSensitive ? [] : .caseInsensitive
-                        let regex = try NSRegularExpression(pattern: searchText, options: options)
-                        let range = NSRange(searchIn.startIndex..., in: searchIn)
-                        let regexMatches = regex.matches(in: searchIn, range: range)
-                        
-                        for match in regexMatches {
-                            let matchRange = Range(match.range, in: searchIn)!
-                            matches.append(SearchMatch(x: searchIn.distance(from: searchIn.startIndex, to: matchRange.lowerBound), y: y))
-                        }
-                    } catch {
-                        break
+
+            if useRegex {
+                do {
+                    let options: NSRegularExpression.Options = caseSensitive ? [] : .caseInsensitive
+                    let regex = try NSRegularExpression(pattern: searchText, options: options)
+                    let range = NSRange(line.startIndex..., in: line)
+                    let regexMatches = regex.matches(in: line, range: range)
+
+                    for match in regexMatches {
+                        let matchRange = Range(match.range, in: line)!
+                        matches.append(SearchMatch(x: line.distance(from: line.startIndex, to: matchRange.lowerBound), y: y))
                     }
-                } else {
-                    var searchRange = searchIn.startIndex..<searchIn.endIndex
-                    
-                    while let range = searchIn.range(of: searchFor, options: caseSensitive ? [] : .caseInsensitive, range: searchRange) {
-                        let xPos = searchIn.distance(from: searchIn.startIndex, to: range.lowerBound)
-                        matches.append(SearchMatch(x: xPos, y: y))
-                        
-                        searchRange = range.upperBound..<searchIn.endIndex
-                    }
+                } catch {
+                    continue
+                }
+            } else {
+                var searchRange = line.startIndex..<line.endIndex
+
+                while let range = line.range(of: searchText, options: caseSensitive ? [] : .caseInsensitive, range: searchRange) {
+                    let xPos = line.distance(from: line.startIndex, to: range.lowerBound)
+                    matches.append(SearchMatch(x: xPos, y: y))
+
+                    searchRange = range.upperBound..<line.endIndex
                 }
             }
         }
