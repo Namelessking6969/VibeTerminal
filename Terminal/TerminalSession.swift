@@ -69,8 +69,8 @@ class TerminalSession: ObservableObject {
         attributes.c_cc.16 = 3
         attributes.c_cc.17 = 4
         
-        cfsetispeed(&attributes, 9600)
-        cfsetospeed(&attributes, 9600)
+        cfsetispeed(&attributes, speed_t(115200))
+        cfsetospeed(&attributes, speed_t(115200))
         
         tcsetattr(slave, TCSANOW, &attributes)
         ioctl(slave, TIOCSWINSZ, &winSize)
@@ -102,7 +102,12 @@ class TerminalSession: ObservableObject {
             setenv(key, value, 1)
         }
         
-        execv(shell, [shell])
+        shell.withCString { shellCStr in
+            let args: [UnsafePointer<CChar>?] = [shellCStr, nil]
+            args.withUnsafeBufferPointer { cPtr in
+                _ = execv(shellCStr, cPtr.baseAddress)
+            }
+        }
         exit(1)
     }
     
@@ -183,14 +188,15 @@ class TerminalSession: ObservableObject {
     
     func close() {
         readSource?.cancel()
-        
+
         if pid > 0 {
             kill(pid, SIGTERM)
             waitpid(pid, nil, 0)
         }
-        
+
         if ptyMaster >= 0 {
             close(ptyMaster)
+            ptyMaster = -1
         }
     }
     

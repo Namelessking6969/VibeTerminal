@@ -22,7 +22,9 @@ struct SplitPaneView: View {
         if tab.splitSessions.isEmpty {
             TerminalView(session: tab.session)
         } else {
-            let activeSession = tab.activeSplitIndex == 0 ? tab.session : tab.splitSessions[tab.activeSplitIndex - 1]
+            let maxIndex = tab.splitSessions.count
+            let clampedIndex = min(max(0, tab.activeSplitIndex), maxIndex)
+            let activeSession = clampedIndex == 0 ? tab.session : tab.splitSessions[clampedIndex - 1]
             TerminalView(session: activeSession)
                 .onKeyPress(.leftArrow, modifiers: .command) {
                     tab.activeSplitIndex = max(0, tab.activeSplitIndex - 1)

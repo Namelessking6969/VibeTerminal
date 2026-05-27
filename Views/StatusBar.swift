@@ -35,7 +35,7 @@ struct StatusBarView: View {
                         .font(.system(size: 10))
                         .foregroundColor(Color(hex: Settings.shared.theme.cyan))
                     
-                    Text("zsh")
+                    Text(session.name)
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundColor(Color(hex: Settings.shared.theme.foreground).opacity(0.6))
                 }

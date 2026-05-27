@@ -396,13 +396,15 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     });
 
     window.terminalAPI.onUpdateAvailable(({ version }) => {
-      const banner = document.getElementById('updateBanner')!;
+      const banner = document.getElementById('updateBanner');
+      if (!banner) return;
       banner.innerHTML = `<span>Version ${version} is downloading in the background...</span>`;
       banner.classList.add('visible');
     });
 
     window.terminalAPI.onUpdateDownloaded(({ version }) => {
-      const banner = document.getElementById('updateBanner')!;
+      const banner = document.getElementById('updateBanner');
+      if (!banner) return;
       banner.innerHTML = `
         <span>Version ${version} is ready to install.</span>
         <button class="update-banner-btn" onclick="terminalManager.installUpdate()">Restart &amp; Update</button>
@@ -411,7 +413,8 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     });
 
     window.terminalAPI.onUpdateStatus(({ message }) => {
-      document.getElementById('updateStatus')!.textContent = message;
+      const el = document.getElementById('updateStatus');
+      if (el) el.textContent = message;
     });
 
     document.addEventListener('keydown', (e) => {
@@ -807,7 +810,8 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     });
     terminal.onResize(({ cols, rows }) => {
       window.terminalAPI.resize(termId, cols, rows);
-      document.getElementById('dimensions')!.textContent = `${cols}x${rows}`;
+      const dimEl = document.getElementById('dimensions');
+      if (dimEl) dimEl.textContent = `${cols}x${rows}`;
     });
 
     wrapper.addEventListener('mousedown', () => {
@@ -1529,7 +1533,8 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
   }
 
   showCommandPalette(): void {
-    const overlay = document.getElementById('commandPalette')!;
+    const overlay = document.getElementById('commandPalette');
+    if (!overlay) return;
     const input = document.getElementById('commandInput') as HTMLInputElement;
     overlay.classList.add('visible');
     input.value = ''; input.focus();
@@ -1589,10 +1594,10 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
   }
 
   hideOverlays(): void {
-    document.getElementById('commandPalette')!.classList.remove('visible');
-    document.getElementById('searchOverlay')!.classList.remove('visible');
-    document.getElementById('settingsOverlay')!.classList.remove('visible');
-    document.getElementById('pasteHistoryOverlay')!.classList.remove('visible');
+    document.getElementById('commandPalette')?.classList.remove('visible');
+    document.getElementById('searchOverlay')?.classList.remove('visible');
+    document.getElementById('settingsOverlay')?.classList.remove('visible');
+    document.getElementById('pasteHistoryOverlay')?.classList.remove('visible');
     document.getElementById('sshDropdown')?.remove();
     document.getElementById('contextMenu')?.remove();
   }
@@ -1618,11 +1623,13 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     (document.getElementById('settingsCursorBlink') as HTMLInputElement).checked = s.cursorBlink;
     (document.getElementById('settingsScrollback') as HTMLInputElement).value = String(s.scrollback);
     (document.getElementById('settingsShell') as HTMLInputElement).value = s.shell || '';
-    document.getElementById('updateStatus')!.textContent = '';
+    const updateStatusEl = document.getElementById('updateStatus');
+    if (updateStatusEl) updateStatusEl.textContent = '';
 
     const opacity = s.opacity ?? 1.0;
     (document.getElementById('settingsOpacity') as HTMLInputElement).value = String(opacity);
-    document.getElementById('opacityLabel')!.textContent = Math.round(opacity * 100) + '%';
+    const opacityLabel = document.getElementById('opacityLabel');
+    if (opacityLabel) opacityLabel.textContent = Math.round(opacity * 100) + '%';
 
     const hotkeyEnabled = !!s.hotkeyEnabled;
     (document.getElementById('settingsHotkeyEnabled') as HTMLInputElement).checked = hotkeyEnabled;
@@ -1631,7 +1638,8 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     (document.getElementById('hotkeyHint') as HTMLElement).style.display = hotkeyEnabled ? 'block' : 'none';
 
     window.terminalAPI.getAppVersion().then(v => {
-      document.getElementById('aboutVersion')!.textContent = `v${v}`;
+      const el = document.getElementById('aboutVersion');
+      if (el) el.textContent = `v${v}`;
     });
 
     this._pendingKeybindings = { ...(this.settings.keybindings ?? {}) };
@@ -1656,7 +1664,7 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
 
     const newSettings: Settings = {
       fontFamily: fontFamily || DEFAULT_SETTINGS.fontFamily,
-      fontSize: parseInt((document.getElementById('settingsFontSize') as HTMLInputElement).value, 10) || 13,
+      fontSize: Math.round(parseFloat((document.getElementById('settingsFontSize') as HTMLInputElement).value)) || 13,
       cursorStyle: (document.getElementById('settingsCursorStyle') as HTMLSelectElement).value,
       cursorBlink: (document.getElementById('settingsCursorBlink') as HTMLInputElement).checked,
       scrollback: parseInt((document.getElementById('settingsScrollback') as HTMLInputElement).value, 10) || 10000,
@@ -1953,7 +1961,8 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
   }
 
   checkForUpdates(): void {
-    document.getElementById('updateStatus')!.textContent = 'Checking...';
+    const statusEl = document.getElementById('updateStatus');
+    if (statusEl) statusEl.textContent = 'Checking...';
     window.terminalAPI.checkForUpdates();
   }
 

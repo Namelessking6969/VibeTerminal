@@ -10,6 +10,7 @@ struct TabBarView: View {
             ForEach(Array(terminalManager.tabs.enumerated()), id: \.element.id) { index, tab in
                 TabItemView(
                     tab: tab,
+                    terminalManager: terminalManager,
                     isActive: index == terminalManager.activeTabIndex,
                     isHovered: hoveredTabIndex == index
                 )
@@ -42,6 +43,7 @@ struct TabBarView: View {
 
 struct TabItemView: View {
     @ObservedObject var tab: TerminalTab
+    @ObservedObject var terminalManager: TerminalManager
     @ObservedObject private var settings = Settings.shared
     let isActive: Bool
     let isHovered: Bool
@@ -90,6 +92,3 @@ struct TabItemView: View {
     }
 }
 
-private var terminalManager: TerminalManager {
-    TerminalManager()
-}

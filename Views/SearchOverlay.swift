@@ -68,8 +68,8 @@ struct SearchOverlayView: View {
         let screen = session.buffer.getVisibleBuffer()
         
         for (y, row) in screen.enumerated() {
+            let line = String(row.map { $0.character })
             for (x, cell) in row.enumerated() {
-                let line = String(row.map { $0.character })
                 
                 var searchIn = line
                 var searchFor = searchText

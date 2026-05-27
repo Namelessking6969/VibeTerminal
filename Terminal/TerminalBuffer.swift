@@ -1,7 +1,6 @@
 import Foundation
 
-struct TerminalCell: Identifiable, Equatable {
-    let id = UUID()
+struct TerminalCell: Equatable {
     var character: Character
     var foregroundColor: Int
     var backgroundColor: Int
@@ -52,7 +51,7 @@ class TerminalBuffer {
     private(set) var cursor: Cursor = .origin
     
     private var savedCursor: Cursor = .origin
-    private var scrollRegion: ScrollRegion = .full
+    private var scrollRegion = ScrollRegion(top: 0, bottom: 23)
     private var charset: Int = 0
     
     private var currentForeground: Int = 7
@@ -64,11 +63,14 @@ class TerminalBuffer {
     private var currentInverse: Bool = false
     private var currentBlink: Bool = false
     
-    var scrollbackSize: Int = 10000
+    var scrollbackSize: Int {
+        Settings.shared.scrollbackLines
+    }
     
     init(columns: Int = 80, rows: Int = 24) {
         self.columns = columns
         self.rows = rows
+        self.scrollRegion = ScrollRegion(top: 0, bottom: rows - 1)
         self.screen = Array(repeating: Array(repeating: TerminalCell.defaultCell, count: columns), count: rows)
     }
     
@@ -215,16 +217,33 @@ class TerminalBuffer {
     
     private func processOSC(_ char: Character) {
         let code = char.asciiValue ?? 0
-        
+
         if code == 0x07 || code == 0x1B {
+            handleOSC(oscString)
+            oscString = ""
             state = .normal
         } else {
             oscString.append(char)
         }
     }
+
+    private func handleOSC(_ osc: String) {
+        guard !osc.isEmpty else { return }
+        let parts = osc.split(separator: ";", maxSplits: 1)
+        guard let cmd = parts.first, let num = Int(cmd) else { return }
+        let value = parts.count > 1 ? String(parts[1]) : nil
+        switch num {
+        case 0, 1, 2:
+            if let title = value, !title.isEmpty {
+                NotificationCenter.default.post(name: .terminalTitleChange, object: title)
+            }
+        default:
+            break
+        }
+    }
     
     private func executeCSI(_ command: Character) {
-        let params = csiParams.isEmpty ? [1] : csiParams
+        let params = csiParams.isEmpty ? [0] : csiParams
         let code = command.asciiValue ?? 0
 
         switch code {
@@ -264,7 +283,7 @@ class TerminalBuffer {
                 cursor.x = 0
                 cursor.y = 0
             } else {
-                scrollRegion = .full
+                scrollRegion = ScrollRegion(top: 0, bottom: rows - 1)
             }
         case 0x73: // s - save cursor
             savedCursor = cursor
@@ -440,7 +459,7 @@ class TerminalBuffer {
     private func reset() {
         cursor = .origin
         savedCursor = .origin
-        scrollRegion = .full
+        scrollRegion = ScrollRegion(top: 0, bottom: rows - 1)
         currentForeground = 7
         currentBackground = 0
         currentBold = false
@@ -449,6 +468,8 @@ class TerminalBuffer {
         currentUnderline = false
         currentInverse = false
         currentBlink = false
+        screen = Array(repeating: Array(repeating: TerminalCell.defaultCell, count: columns), count: rows)
+        scrollback = []
     }
     
     func clear() {

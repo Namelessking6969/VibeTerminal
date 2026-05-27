@@ -30,12 +30,11 @@ struct GeneralSettingsView: View {
     var body: some View {
         Form {
             Section("Startup") {
-                Toggle("Open new window with a single tab", isOn: .constant(true))
-                Toggle("Restore previously open tabs", isOn: .constant(true))
+                // Settings for startup behavior can be added here
             }
-            
+
             Section("Closing") {
-                Toggle("Confirm before closing terminal with running processes", isOn: .constant(false))
+                // Settings for closing behavior can be added here
             }
         }
         .padding()
@@ -100,17 +99,11 @@ struct TerminalSettingsView: View {
             }
             
             Section("Bell") {
-                Toggle("Audible bell", isOn: $settings.bellEnabled)
-                Toggle("Visual bell", isOn: .constant(true))
+                Toggle("Bell enabled", isOn: $settings.bellEnabled)
             }
             
             Section("Shell") {
-                Picker("Default shell", selection: .constant("/bin/zsh")) {
-                    Text("zsh").tag("/bin/zsh")
-                    Text("bash").tag("/bin/bash")
-                    Text("fish").tag("/usr/local/bin/fish")
-                }
-                .pickerStyle(.menu)
+                // Default shell setting can be added here when a binding is available
             }
         }
         .padding()

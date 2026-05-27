@@ -624,10 +624,20 @@ ipcMain.handle('ssh-write-config', (_event: IpcMainInvokeEvent, { alias, hostnam
   try {
     const sshDir = path.join(os.homedir(), '.ssh');
     if (!fs.existsSync(sshDir)) fs.mkdirSync(sshDir, { mode: 0o700 });
-    let entry = `\nHost ${alias}\n    HostName ${hostname}\n`;
+
+    let entry = `Host ${alias}\n    HostName ${hostname}\n`;
     if (user) entry += `    User ${user}\n`;
     if (port && port !== '22') entry += `    Port ${port}\n`;
-    fs.appendFileSync(SSH_CONFIG_PATH, entry, 'utf8');
+
+    let content = '';
+    if (fs.existsSync(SSH_CONFIG_PATH)) {
+      content = fs.readFileSync(SSH_CONFIG_PATH, 'utf8');
+      // Remove existing block for this alias
+      const regex = new RegExp(`(^|\\n)Host\\s+${alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b[\\s\\S]*?(?=\\nHost\\s|$)`, 'g');
+      content = content.replace(regex, '$1').trimEnd() + '\n';
+    }
+
+    fs.writeFileSync(SSH_CONFIG_PATH, content + '\n' + entry, 'utf8');
     return { success: true };
   } catch (e) {
     log.error('ssh-write-config error:', e);

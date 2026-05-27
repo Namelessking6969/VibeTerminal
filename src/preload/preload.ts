@@ -29,16 +29,46 @@ const terminalAPI = {
   },
 
   // Menu events
-  onNewTab: (callback: (event: IpcRendererEvent) => void) => ipcRenderer.on('new-tab', callback),
-  onCloseTab: (callback: (event: IpcRendererEvent) => void) => ipcRenderer.on('close-tab', callback),
-  onClearTerminal: (callback: (event: IpcRendererEvent) => void) => ipcRenderer.on('clear-terminal', callback),
-  onNextTab: (callback: (event: IpcRendererEvent) => void) => ipcRenderer.on('next-tab', callback),
-  onPrevTab: (callback: (event: IpcRendererEvent) => void) => ipcRenderer.on('prev-tab', callback),
-  onSplitHorizontal: (callback: (event: IpcRendererEvent) => void) => ipcRenderer.on('split-horizontal', callback),
-  onSplitVertical: (callback: (event: IpcRendererEvent) => void) => ipcRenderer.on('split-vertical', callback),
-  onShowSearch: (callback: (event: IpcRendererEvent) => void) => ipcRenderer.on('show-search', callback),
-  onShowCommandPalette: (callback: (event: IpcRendererEvent) => void) => ipcRenderer.on('show-command-palette', callback),
-  onShowSettings: (callback: (event: IpcRendererEvent) => void) => ipcRenderer.on('show-settings', callback),
+  onNewTab: (callback: (event: IpcRendererEvent) => void): Unsubscribe => {
+    ipcRenderer.on('new-tab', callback);
+    return () => ipcRenderer.removeListener('new-tab', callback);
+  },
+  onCloseTab: (callback: (event: IpcRendererEvent) => void): Unsubscribe => {
+    ipcRenderer.on('close-tab', callback);
+    return () => ipcRenderer.removeListener('close-tab', callback);
+  },
+  onClearTerminal: (callback: (event: IpcRendererEvent) => void): Unsubscribe => {
+    ipcRenderer.on('clear-terminal', callback);
+    return () => ipcRenderer.removeListener('clear-terminal', callback);
+  },
+  onNextTab: (callback: (event: IpcRendererEvent) => void): Unsubscribe => {
+    ipcRenderer.on('next-tab', callback);
+    return () => ipcRenderer.removeListener('next-tab', callback);
+  },
+  onPrevTab: (callback: (event: IpcRendererEvent) => void): Unsubscribe => {
+    ipcRenderer.on('prev-tab', callback);
+    return () => ipcRenderer.removeListener('prev-tab', callback);
+  },
+  onSplitHorizontal: (callback: (event: IpcRendererEvent) => void): Unsubscribe => {
+    ipcRenderer.on('split-horizontal', callback);
+    return () => ipcRenderer.removeListener('split-horizontal', callback);
+  },
+  onSplitVertical: (callback: (event: IpcRendererEvent) => void): Unsubscribe => {
+    ipcRenderer.on('split-vertical', callback);
+    return () => ipcRenderer.removeListener('split-vertical', callback);
+  },
+  onShowSearch: (callback: (event: IpcRendererEvent) => void): Unsubscribe => {
+    ipcRenderer.on('show-search', callback);
+    return () => ipcRenderer.removeListener('show-search', callback);
+  },
+  onShowCommandPalette: (callback: (event: IpcRendererEvent) => void): Unsubscribe => {
+    ipcRenderer.on('show-command-palette', callback);
+    return () => ipcRenderer.removeListener('show-command-palette', callback);
+  },
+  onShowSettings: (callback: (event: IpcRendererEvent) => void): Unsubscribe => {
+    ipcRenderer.on('show-settings', callback);
+    return () => ipcRenderer.removeListener('show-settings', callback);
+  },
 
   openNewWindow: (workspaceName?: string, transferToken?: string) =>
     ipcRenderer.invoke('create-window', { workspaceName, transferToken }),

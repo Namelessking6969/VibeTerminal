@@ -59,14 +59,14 @@ struct VibeTerminalApp: App {
                     NotificationCenter.default.post(name: .nextTab, object: nil)
                 }
                 .keyboardShortcut("]", modifiers: [.command, .shift])
-                
+
                 Button("Previous Tab") {
                     NotificationCenter.default.post(name: .previousTab, object: nil)
                 }
                 .keyboardShortcut("[", modifiers: [.command, .shift])
-                
+
                 Divider()
-                
+
                 Button("Close Tab") {
                     NotificationCenter.default.post(name: .closeTab, object: nil)
                 }
@@ -91,4 +91,5 @@ extension Notification.Name {
     static let nextTab = Notification.Name("nextTab")
     static let previousTab = Notification.Name("previousTab")
     static let closeTab = Notification.Name("closeTab")
+    static let terminalTitleChange = Notification.Name("terminalTitleChange")
 }
