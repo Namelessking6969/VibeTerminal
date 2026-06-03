@@ -4,9 +4,11 @@ export interface Rule {
 }
 
 import { sudoRule } from './sudo';
+import { gitTypoRule } from './gitTypo';
 
 const RULES: Rule[] = [
   sudoRule,
+  gitTypoRule,
 ];
 
 export function runRules(command: string, errorOutput: string): string | null {
