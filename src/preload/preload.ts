@@ -123,6 +123,16 @@ const terminalAPI = {
 
   setHotkey: (opts: { enabled: boolean; hotkey: string }) => ipcRenderer.invoke('set-hotkey', opts),
 
+  onCorrectionSuggestion: (callback: Callback<{ terminalId: number; corrected: string | null }>): Unsubscribe => {
+    const handler = (_event: IpcRendererEvent, data: { terminalId: number; corrected: string | null }) => callback(data);
+    ipcRenderer.on('correction-suggestion', handler);
+    return () => ipcRenderer.removeListener('correction-suggestion', handler);
+  },
+
+  dismissCorrection: (terminalId: number): void => {
+    ipcRenderer.send('correction-dismissed', { terminalId });
+  },
+
   openExternal: (url: string) => ipcRenderer.send('open-external', url),
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   sendFeedback: (text: string, name?: string) => ipcRenderer.invoke('send-feedback', text, name),
