@@ -3,7 +3,11 @@ export interface Rule {
   fix(command: string, errorOutput: string): string;
 }
 
-const RULES: Rule[] = [];
+import { sudoRule } from './sudo';
+
+const RULES: Rule[] = [
+  sudoRule,
+];
 
 export function runRules(command: string, errorOutput: string): string | null {
   for (const rule of RULES) {
