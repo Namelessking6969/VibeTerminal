@@ -22,7 +22,9 @@
     "postinstall": "electron-builder install-app-deps",
     "version:bump": "./scripts/bump-version.sh",
     "version:bump:minor": "./scripts/bump-version.sh minor",
-    "version:bump:major": "./scripts/bump-version.sh major"
+    "version:bump:major": "./scripts/bump-version.sh major",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "electron-log": "^5.1.7",
@@ -38,7 +40,8 @@
     "electron": "^28.1.0",
     "electron-builder": "^24.9.1",
     "esbuild": "^0.24.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.8"
   },
   "build": {
     "appId": "com.vibeterminal.app",
