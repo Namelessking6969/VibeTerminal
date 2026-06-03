@@ -17,6 +17,7 @@ import fs from 'fs';
 import * as pty from 'node-pty';
 import log from 'electron-log';
 import type { AppUpdater } from 'electron-updater';
+import { CommandTracker } from './commandTracker';
 
 if (process.platform === 'linux') {
   app.commandLine.appendSwitch('no-sandbox');
@@ -93,6 +94,7 @@ function getIconPath(): string {
 
 let mainWindow: BrowserWindow | null = null;
 const terminals = new Map<number, TerminalEntry>();
+const trackers = new Map<number, CommandTracker>();
 let terminalIdCounter = 0;
 const pendingTransfers = new Map<string, PendingTransfer>();
 
@@ -474,6 +476,7 @@ ipcMain.handle('create-terminal', async (event: IpcMainInvokeEvent, options: Cre
       if (wc && !wc.isDestroyed()) {
         wc.send('terminal-data', { id, data });
       }
+      trackers.get(id)?.onOutput(data);
     });
 
     ptyProcess.onExit(({ exitCode, signal }) => {
@@ -484,10 +487,12 @@ ipcMain.handle('create-terminal', async (event: IpcMainInvokeEvent, options: Cre
         wc.send('terminal-exit', { id, exitCode, signal });
       }
       terminals.delete(id);
+      trackers.delete(id);
       log.info(`Terminal ${id} exited with code ${exitCode}`);
     });
 
     terminals.set(id, { process: ptyProcess, shell: resolvedShell, webContentsId: senderWcId });
+    trackers.set(id, new CommandTracker(id, senderWcId));
     log.info(`Created terminal ${id} with shell ${resolvedShell}`);
     return { success: true, id };
   } catch (error) {
@@ -498,6 +503,7 @@ ipcMain.handle('create-terminal', async (event: IpcMainInvokeEvent, options: Cre
 
 ipcMain.on('terminal-input', (_event: IpcMainEvent, { id, data }: { id: number; data: string }) => {
   terminals.get(id)?.process.write(data);
+  trackers.get(id)?.onInput(data);
 });
 
 ipcMain.on('terminal-resize', (_event: IpcMainEvent, { id, cols, rows }: { id: number; cols: number; rows: number }) => {
@@ -509,7 +515,12 @@ ipcMain.on('terminal-kill', (_event: IpcMainEvent, { id }: { id: number }) => {
   if (terminal) {
     terminal.process.kill();
     terminals.delete(id);
+    trackers.delete(id);
   }
+});
+
+ipcMain.on('correction-dismissed', (_event: IpcMainEvent, { terminalId }: { terminalId: number }) => {
+  trackers.get(terminalId)?.reset();
 });
 
 ipcMain.on('window-minimize', (event: IpcMainEvent) => {
