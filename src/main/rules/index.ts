@@ -6,11 +6,13 @@ export interface Rule {
 import { sudoRule } from './sudo';
 import { gitTypoRule } from './gitTypo';
 import { cdNotADirRule } from './cdNotADir';
+import { wrongFlagRule } from './wrongFlag';
 
 const RULES: Rule[] = [
   sudoRule,
   gitTypoRule,
   cdNotADirRule,
+  wrongFlagRule,
 ];
 
 export function runRules(command: string, errorOutput: string): string | null {
