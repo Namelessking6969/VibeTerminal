@@ -122,6 +122,8 @@ declare global {
       onUpdateDownloaded(callback: (data: { version: string }) => void): () => void;
       onUpdateStatus(callback: (data: { message: string }) => void): () => void;
       setHotkey(opts: { enabled: boolean; hotkey: string }): Promise<{ success: boolean }>;
+      onCorrectionSuggestion(callback: (data: { terminalId: number; corrected: string | null }) => void): () => void;
+      dismissCorrection(terminalId: number): void;
       openExternal(url: string): void;
       getAppVersion(): Promise<string>;
       sendFeedback(text: string, name?: string): Promise<boolean>;
@@ -272,6 +274,64 @@ const TAB_COLORS: (string | null)[] = [
 
 // ─── TerminalManager ─────────────────────────────────────────────────────────
 
+class CorrectionOverlay {
+  private el: HTMLElement | null = null;
+  private dismissTimer: ReturnType<typeof setTimeout> | null = null;
+  private currentTerminalId: number | null = null;
+  private keyHandler: ((e: KeyboardEvent) => void) | null = null;
+
+  show(terminalId: number, corrected: string | null, onYes: (cmd: string) => void): void {
+    this.hide();
+    this.currentTerminalId = terminalId;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'correction-overlay';
+
+    if (corrected !== null) {
+      overlay.innerHTML = `
+        <div class="correction-banner">
+          <span class="correction-label">Did you mean:</span>
+          <span class="correction-cmd">${corrected.replace(/</g, '&lt;')}</span>
+          <button class="correction-btn yes" id="corrYes">Yes [Y]</button>
+          <button class="correction-btn" id="corrNo">No [N]</button>
+        </div>`;
+      overlay.querySelector('#corrYes')!.addEventListener('click', () => {
+        onYes(corrected);
+        this.hide();
+      });
+      overlay.querySelector('#corrNo')!.addEventListener('click', () => this.hide());
+      this.dismissTimer = setTimeout(() => this.hide(), 10000);
+    } else {
+      overlay.innerHTML = `
+        <div class="correction-banner">
+          <span class="correction-label">Couldn't figure that one out.</span>
+        </div>`;
+      this.dismissTimer = setTimeout(() => this.hide(), 4000);
+    }
+
+    document.body.appendChild(overlay);
+    this.el = overlay;
+
+    this.keyHandler = (e: KeyboardEvent) => {
+      if (corrected !== null && e.key.toLowerCase() === 'y') { onYes(corrected); this.hide(); }
+      else if (e.key.toLowerCase() === 'n' || e.key === 'Escape') { this.hide(); }
+      else if (e.key.length === 1) { this.hide(); }
+    };
+    document.addEventListener('keydown', this.keyHandler, { capture: true, once: false });
+  }
+
+  hide(): void {
+    if (this.dismissTimer !== null) { clearTimeout(this.dismissTimer); this.dismissTimer = null; }
+    if (this.keyHandler) { document.removeEventListener('keydown', this.keyHandler, { capture: true } as EventListenerOptions); this.keyHandler = null; }
+    this.el?.remove();
+    this.el = null;
+    if (this.currentTerminalId !== null) {
+      window.terminalAPI.dismissCorrection(this.currentTerminalId);
+      this.currentTerminalId = null;
+    }
+  }
+}
+
 class TerminalManager {
   workspaces: Workspace[] = [];
   activeWorkspaceId: string | null = null;
@@ -286,6 +346,7 @@ class TerminalManager {
   broadcastInput = false;
   _pendingKeybindings: Record<string, string> = {};
   commands: Command[];
+  private readonly correctionOverlay = new CorrectionOverlay();
 
   constructor() {
     this.commands = [
@@ -415,6 +476,17 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     window.terminalAPI.onUpdateStatus(({ message }) => {
       const el = document.getElementById('updateStatus');
       if (el) el.textContent = message;
+    });
+
+    window.terminalAPI.onCorrectionSuggestion(({ terminalId, corrected }) => {
+      const tab = this.tabs.find((t) => t.id === this.activeTabId);
+      if (!tab) return;
+      const activeTermId = tab.terminals[tab.activeTerminalIndex]?.id;
+      if (activeTermId !== terminalId) return;
+
+      this.correctionOverlay.show(terminalId, corrected, (cmd) => {
+        window.terminalAPI.write(terminalId, cmd);
+      });
     });
 
     document.addEventListener('keydown', (e) => {
