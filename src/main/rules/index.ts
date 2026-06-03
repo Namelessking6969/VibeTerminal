@@ -5,10 +5,12 @@ export interface Rule {
 
 import { sudoRule } from './sudo';
 import { gitTypoRule } from './gitTypo';
+import { cdNotADirRule } from './cdNotADir';
 
 const RULES: Rule[] = [
   sudoRule,
   gitTypoRule,
+  cdNotADirRule,
 ];
 
 export function runRules(command: string, errorOutput: string): string | null {
