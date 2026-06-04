@@ -313,9 +313,9 @@ class CorrectionOverlay {
     this.el = overlay;
 
     this.keyHandler = (e: KeyboardEvent) => {
-      if (corrected !== null && e.key.toLowerCase() === 'y') { onYes(corrected); this.hide(); }
-      else if (e.key.toLowerCase() === 'n' || e.key === 'Escape') { this.hide(); }
-      else if (e.key.length === 1) { this.hide(); }
+      if (corrected !== null && e.key.toLowerCase() === 'y') { e.preventDefault(); e.stopPropagation(); onYes(corrected); this.hide(); }
+      else if (e.key.toLowerCase() === 'n' || e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); this.hide(); }
+      else if (e.key.length === 1) { e.preventDefault(); e.stopPropagation(); this.hide(); }
     };
     document.addEventListener('keydown', this.keyHandler, { capture: true, once: false });
   }
