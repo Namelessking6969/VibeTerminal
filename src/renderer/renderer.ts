@@ -41,6 +41,7 @@ interface TerminalData {
   fitAddon: FitAddon;
   searchAddon: SearchAddon;
   wrapper: HTMLElement;
+  resizeObserver: ResizeObserver;
 }
 
 interface Tab {
@@ -433,6 +434,7 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     });
 
     window.terminalAPI.onExit(({ id }) => {
+      this.terminals.get(id)?.resizeObserver.disconnect();
       this.terminals.delete(id);
       for (const ws of this.workspaces) {
         const tab = ws.tabs.find(t => t.terminals.some(tn => tn.id === id));
@@ -535,6 +537,7 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     ws.tabs.forEach(tab => {
       tab.terminals.forEach(t => {
         window.terminalAPI.kill(t.id);
+        t.resizeObserver.disconnect();
         this.terminals.delete(t.id);
       });
       if (tab.container) tab.container.remove();
@@ -603,7 +606,10 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     if (!ws) return;
 
     ws.tabs.forEach(tab => {
-      tab.terminals.forEach(t => this.terminals.delete(t.id));
+      tab.terminals.forEach(t => {
+        t.resizeObserver.disconnect();
+        this.terminals.delete(t.id);
+      });
       if (tab.container) tab.container.remove();
     });
 
@@ -825,6 +831,15 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     terminal.open(wrapper);
     fitAddon.fit();
 
+    // The wrapper starts out hidden (inactive tab) or mid-flex-transition (split panes),
+    // so the fit() above frequently measures a stale/zero size. A ResizeObserver re-fits
+    // whenever the wrapper's actual box changes — tab activation, split drag, window resize —
+    // which is the only way to reliably catch the size once real layout has happened.
+    const resizeObserver = new ResizeObserver(() => {
+      fitAddon.fit();
+    });
+    resizeObserver.observe(wrapper);
+
     // Copy: Ctrl+Shift+C  |  Paste: Ctrl+Shift+V or Ctrl+V
     terminal.attachCustomKeyEventHandler((e) => {
       if (e.type !== 'keydown') return true;
@@ -868,7 +883,7 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
       }
     });
 
-    const terminalData: TerminalData = { id: termId, terminal, fitAddon, searchAddon, wrapper };
+    const terminalData: TerminalData = { id: termId, terminal, fitAddon, searchAddon, wrapper, resizeObserver };
     this.terminals.set(termId, terminalData);
     tab.terminals.push(terminalData);
     tab.activeTerminalIndex = tab.terminals.length - 1;
@@ -953,6 +968,7 @@ this.applyTheme(this.settings.theme || 'vibe', initOpacity);
     const tab = ws.tabs[index];
     tab.terminals.forEach(t => {
       window.terminalAPI.kill(t.id);
+      t.resizeObserver.disconnect();
       this.terminals.delete(t.id);
     });
     if (tab.container) tab.container.remove();
